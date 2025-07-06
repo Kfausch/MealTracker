@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meal Tracker</title>
+  <style>
+    body {
+      background-color: #2e2e2e;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    h1, h2 {
+      color: #ffffff;
+    }
+    .input-group, select, input, button {
+      margin: 5px 0;
+      padding: 8px;
+      border-radius: 5px;
+      border: none;
+    }
+    select, input {
+      background-color: #4a4a4a;
+      color: #ffffff;
+    }
+    button {
+      background-color: #6c63ff;
+      color: white;
+      cursor: pointer;
+    }
+    .totals, .meals-list, .manual-entry {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Meal Tracker</h1>
+
+  <div class="input-group">
+    <h2>Daily Targets</h2>
+    Calories: <input type="number" id="targetCalories" value="1800" />
+    Protein: <input type="number" id="targetProtein" value="180" />
+    Carbs: <input type="number" id="targetCarbs" value="100" />
+    Fat: <input type="number" id="targetFat" value="50" />
+  </div>
+
+  <div class="input-group">
+    <h2>Select Meal</h2>
+    <select id="mealDropdown"></select>
+    <button onclick="addMeal()">Add Meal</button>
+  </div>
+
+  <div class="manual-entry">
+    <h2>Manual Entry</h2>
+    Name: <input type="text" id="manualName" />
+    Calories: <input type="number" id="manualCalories" />
+    Protein: <input type="number" id="manualProtein" />
+    Carbs: <input type="number" id="manualCarbs" />
+    Fat: <input type="number" id="manualFat" />
+    <button onclick="addManualMeal()">Add Manual Meal</button>
+  </div>
+
+  <div class="totals">
+    <h2>Totals</h2>
+    <p id="totalCalories">Calories: 0</p>
+    <p id="totalProtein">Protein: 0</p>
+    <p id="totalCarbs">Carbs: 0</p>
+    <p id="totalFat">Fat: 0</p>
+    <p id="remainingCalories">Remaining Calories: 0</p>
+    <p id="remainingProtein">Remaining Protein: 0</p>
+    <p id="remainingCarbs">Remaining Carbs: 0</p>
+    <p id="remainingFat">Remaining Fat: 0</p>
+    <button onclick="resetTotals()">Reset Totals</button>
+  </div>
+
+  <div class="meals-list">
+    <h2>Meals Selected</h2>
+    <ul id="selectedMeals"></ul>
+  </div>
+
+  <script>
+    let meals = {};
+    let totalCalories = 0, totalProtein = 0, totalCarbs = 0, totalFat = 0;
+
+    fetch('meals.json')
+      .then(response => response.json())
+      .then(data => {
+        meals = data;
+        const dropdown = document.getElementById('mealDropdown');
+        Object.keys(meals).forEach(meal => {
+          const option = document.createElement('option');
+          option.value = meal;
+          option.textContent = meal;
+          dropdown.appendChild(option);
+        });
+      });
+
+    function updateLabels() {
+      const targetCalories = parseInt(document.getElementById('targetCalories').value) || 0;
+      const targetProtein = parseInt(document.getElementById('targetProtein').value) || 0;
+      const targetCarbs = parseInt(document.getElementById('targetCarbs').value) || 0;
+      const targetFat = parseInt(document.getElementById('targetFat').value) || 0;
+
+      document.getElementById('totalCalories').textContent = `Calories: ${totalCalories}`;
+      document.getElementById('totalProtein').textContent = `Protein: ${totalProtein}`;
+      document.getElementById('totalCarbs').textContent = `Carbs: ${totalCarbs}`;
+      document.getElementById('totalFat').textContent = `Fat: ${totalFat}`;
+
+      document.getElementById('remainingCalories').textContent = `Remaining Calories: ${targetCalories - totalCalories}`;
+      document.getElementById('remainingProtein').textContent = `Remaining Protein: ${targetProtein - totalProtein}`;
+      document.getElementById('remainingCarbs').textContent = `Remaining Carbs: ${targetCarbs - totalCarbs}`;
+      document.getElementById('remainingFat').textContent = `Remaining Fat: ${targetFat - totalFat}`;
+    }
+
+    function addMeal() {
+      const mealName = document.getElementById('mealDropdown').value;
+      const meal = meals[mealName];
+      if (meal) {
+        totalCalories += meal.calories;
+        totalProtein += meal.protein;
+        totalCarbs += meal.carbs;
+        totalFat += meal.fat;
+
+        const li = document.createElement('li');
+        li.textContent = mealName;
+        document.getElementById('selectedMeals').appendChild(li);
+        updateLabels();
+      }
+    }
+
+    function addManualMeal() {
+      const name = document.getElementById('manualName').value;
+      const calories = parseInt(document.getElementById('manualCalories').value) || 0;
+      const protein = parseInt(document.getElementById('manualProtein').value) || 0;
+      const carbs = parseInt(document.getElementById('manualCarbs').value) || 0;
+      const fat = parseInt(document.getElementById('manualFat').value) || 0;
+
+      if (name) {
+        totalCalories += calories;
+        totalProtein += protein;
+        totalCarbs += carbs;
+        totalFat += fat;
+
+        const li = document.createElement('li');
+        li.textContent = `${name} (Manual)`;
+        document.getElementById('selectedMeals').appendChild(li);
+        updateLabels();
+
+        // Clear fields
+        document.getElementById('manualName').value = '';
+        document.getElementById('manualCalories').value = '';
+        document.getElementById('manualProtein').value = '';
+        document.getElementById('manualCarbs').value = '';
+        document.getElementById('manualFat').value = '';
+      }
+    }
+
+    function resetTotals() {
+      totalCalories = 0;
+      totalProtein = 0;
+      totalCarbs = 0;
+      totalFat = 0;
+      document.getElementById('selectedMeals').innerHTML = '';
+      updateLabels();
+    }
+  </script>
+</body>
+</html>
