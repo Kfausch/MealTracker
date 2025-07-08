@@ -2,6 +2,7 @@
   "Chipolte Chicken Wrap (2)": { "calories": 430, "protein": 45, "carbs": 40, "fat": 15 },
   "Chipolte Chicken & Rice": { "calories": 500, "protein": 40, "carbs": 46, "fat": 12 },
   "Apple & Yogurt": { "calories": 200, "protein": 45, "carbs": 37, "fat": 3 },
+  "Protein+pb2 Yogurt": { "calories": 300, "protein": 57, "carbs": 15, "fat": 10 },
   "Protein Shake + PB2": { "calories": 150, "protein": 27, "carbs": 7, "fat": 23 },
   "Grilled Salmon & Rice": { "calories": 475, "protein": 45, "carbs": 45, "fat": 12 },
   "Banana": { "calories": 105, "protein": 1, "carbs": 27, "fat": 1 },
