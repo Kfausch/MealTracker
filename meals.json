@@ -17,5 +17,10 @@
   "Over Night Oats": { "calories": 325, "protein": 30, "carbs": 34, "fat": 3 },
   "Chicken Breast": { "calories": 425, "protein": 80, "carbs": 0, "fat": 9 },
   "Itailian Sausage (1)": { "calories": 250, "protein": 17, "carbs": 0, "fat": 20 },
+  "Beef Jerky (1oz)": { "calories": 70, "protein": 11, "carbs": 6, "fat": 0 },
+  "Italian Sausage (1 link)": { "calories": 250, "protein": 17, "carbs": 1, "fat": 20 },
+  "Pork Roast (4oz)": { "calories": 130, "protein": 23, "carbs": 0, "fat": 4 },
+  "Strawberry/Fruit Ice Cream (1/4 pint)": { "calories": 210, "protein": 39, "carbs": 10, "fat": 5 },
+  "Choc/PB2 Ice Cream no yogurt (1/2 pint)": { "calories": 160, "protein": 20, "carbs": 15, "fat": 10 },
   "White Rice (1 cup)": { "calories": 205, "protein": 4, "carbs": 45, "fat": 0 }
 }
