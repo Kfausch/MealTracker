@@ -10,6 +10,7 @@
   "Cottage Cheese LF": { "calories": 90, "protein": 13, "carbs": 5, "fat": 3 },
   "Egg": { "calories": 70, "protein": 6, "carbs": 1, "fat": 5 },
   "Feta": { "calories": 70, "protein": 5, "carbs": 1, "fat": 5 },
+  "Greek Yogurt (1 cup)": { "calories": 150, "protein": 27, "carbs": 11, "fat": 0 },
   "Grilled Salmon 7oz": { "calories": 400, "protein": 45, "carbs": 0, "fat": 23 },
   "Grilled Salmon & Rice": { "calories": 605, "protein": 49, "carbs": 45, "fat": 23 },
   "Ground Turkey Bowl": { "calories": 650, "protein": 40, "carbs": 71, "fat": 18 },
