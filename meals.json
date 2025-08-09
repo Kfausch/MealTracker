@@ -27,6 +27,7 @@
   "Sandwich half": { "calories": 490, "protein": 49, "carbs": 34, "fat": 18 },
   "Sandwich full": { "calories": 630, "protein": 54, "carbs": 61, "fat": 19 },
   "Tuna": { "calories": 190, "protein": 42, "carbs": 0, "fat": 3 },
+  "Turkey Taco 3oz (1)": { "calories": 350, "protein": 36, "carbs": 22, "fat": 21 },
   "Tortilla": { "calories": 70, "protein": 6, "carbs": 19, "fat": 4 },
   "White Rice (1 cup)": { "calories": 205, "protein": 4, "carbs": 45, "fat": 0 }
 }
