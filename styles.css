@@ -379,4 +379,26 @@ footer{
   max-width: calc(100vw - 26px);
 }
 
+/* Ensure native <select> dropdown menu matches the active theme */
+select{
+  color-scheme: dark; /* helps browser render dropdown UI appropriately */
+}
+
+/* Dropdown list items */
+select option, select optgroup{
+  background-color: var(--bg2);
+  color: var(--text);
+}
+
+/* Light theme overrides */
+[data-theme="light"] select{
+  color-scheme: light;
+}
+[data-theme="light"] select option,
+[data-theme="light"] select optgroup{
+  background-color: #ffffff;
+  color: #0b1020;
+}
+
+
 .toast.show{ opacity:1; }
