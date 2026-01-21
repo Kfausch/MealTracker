@@ -1,171 +1,233 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Meal Tracker</title>
-  <style>
-    body {
-      background-color: #2e2e2e;
-      color: #ffffff;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-    }
-    h1, h2 {
-      color: #ffffff;
-    }
-    .input-group, select, input, button {
-      margin: 5px 0;
-      padding: 8px;
-      border-radius: 5px;
-      border: none;
-    }
-    select, input {
-      background-color: #4a4a4a;
-      color: #ffffff;
-    }
-    button {
-      background-color: #6c63ff;
-      color: white;
-      cursor: pointer;
-    }
-    .totals, .meals-list, .manual-entry {
-      margin-top: 20px;
-    }
-  </style>
+  <meta name="description" content="A fast, lightweight meal and macro tracker that works on desktop and mobile." />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <h1>Meal Tracker</h1>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <h1>Meal Tracker</h1>
+          <div class="sub">Fast macro logging — desktop & mobile friendly.</div>
+        </div>
+      </div>
 
-  <div class="input-group">
-    <h2>Daily Targets</h2>
-    Calories: <input type="number" id="targetCalories" value="1800" /><br>
-    Protein: <input type="number" id="targetProtein" value="180" /><br>
-    Carbs: <input type="number" id="targetCarbs" value="160" /><br>
-    Fat: <input type="number" id="targetFat" value="50" />
+      <div class="top-actions">
+        <span class="badge" id="mealCountBadge">0 items</span>
+        <button class="btn btn-ghost" id="themeToggle" type="button" title="Toggle light/dark">
+          Toggle theme
+        </button>
+      </div>
+    </header>
+
+    <main class="grid grid-2">
+      <!-- LEFT COLUMN -->
+      <section class="grid">
+        <div class="card">
+          <h2>Add meal</h2>
+          <div class="muted">Search, choose a meal, set servings, then add.</div>
+          <hr class="sep" />
+          <div class="form">
+            <div class="form-row cols-2">
+              <div>
+                <label for="mealSearch">Search meals</label>
+                <input id="mealSearch" type="search" placeholder="Type to filter the list…" autocomplete="off" />
+              </div>
+              <div>
+                <label for="mealServings">Servings</label>
+                <input id="mealServings" type="number" min="0" step="0.25" value="1" />
+              </div>
+            </div>
+
+            <div>
+              <label for="mealDropdown">Meal</label>
+              <select id="mealDropdown" aria-label="Meal list"></select>
+            </div>
+
+            <div class="row-inline">
+              <button class="btn btn-primary" id="addMealBtn" type="button">Add selected meal</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Manual entry</h2>
+          <div class="muted">
+            One‑offs: use <strong>Add manual meal</strong>. Reusable foods: use <strong>Add &amp; Save</strong>.
+            <span class="kbd" style="margin-left:6px;">Enter</span> adds a one‑off.
+          </div>
+          <hr class="sep" />
+
+          <div class="form" id="manualForm">
+            <div class="form-row cols-2">
+              <div>
+                <label for="manualName">Name</label>
+                <input id="manualName" type="text" placeholder="e.g., Steak &amp; Rice" />
+              </div>
+              <div>
+                <label for="manualServings">Servings</label>
+                <input id="manualServings" type="number" min="0" step="0.25" value="1" />
+              </div>
+            </div>
+
+            <div class="form-row cols-2">
+              <div>
+                <label for="manualCalories">Calories</label>
+                <input id="manualCalories" type="number" min="0" step="1" placeholder="0" />
+              </div>
+              <div>
+                <label for="manualProtein">Protein (g)</label>
+                <input id="manualProtein" type="number" min="0" step="0.1" placeholder="0" />
+              </div>
+            </div>
+
+            <div class="form-row cols-2">
+              <div>
+                <label for="manualCarbs">Carbs (g)</label>
+                <input id="manualCarbs" type="number" min="0" step="0.1" placeholder="0" />
+              </div>
+              <div>
+                <label for="manualFat">Fat (g)</label>
+                <input id="manualFat" type="number" min="0" step="0.1" placeholder="0" />
+              </div>
+            </div>
+
+            <div class="row-inline">
+              <button class="btn btn-primary" id="addManualBtn" type="button">Add manual meal</button>
+              <button class="btn btn-secondary" id="addSaveManualBtn" type="button">Add &amp; Save Manual Meal</button>
+              <button class="btn" id="saveManualBtn" type="button">Save only</button>
+            </div>
+          </div>
+
+          <hr class="sep" />
+
+          <div class="row-inline">
+            <button class="btn" id="exportSavedBtn" type="button">Export saved meals</button>
+            <button class="btn" id="importSavedBtn" type="button">Import saved meals</button>
+            <input id="importFile" type="file" accept=".json,application/json" hidden />
+          </div>
+
+          <div style="margin-top:12px;">
+            <h2 style="margin-top:0;">Saved manual meals</h2>
+            <div class="muted">Tap <strong>Add</strong> to quickly log it, or <strong>Edit</strong> to tweak macros.</div>
+            <hr class="sep" />
+            <div id="savedMealsList" class="log-list"></div>
+            <div id="noSavedMeals" class="muted" style="display:none;">No saved meals yet.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Meals selected</h2>
+          <div class="muted">Now includes macros for each item. Remove any entry with one tap.</div>
+          <hr class="sep" />
+          <div id="selectedMeals" class="log-list"></div>
+          <div id="emptyLog" class="muted" style="display:none;">Nothing logged yet.</div>
+
+          <hr class="sep" />
+          <div class="row-inline">
+            <button class="btn btn-danger" id="clearLogBtn" type="button">Clear day</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT COLUMN -->
+      <section class="grid">
+        <div class="card">
+          <h2>Daily targets</h2>
+          <div class="muted">Auto‑saved in this browser (localStorage).</div>
+          <hr class="sep" />
+
+          <div class="form">
+            <div class="form-row cols-2">
+              <div>
+                <label for="targetCalories">Calories</label>
+                <input id="targetCalories" type="number" min="0" step="1" value="1800" />
+              </div>
+              <div>
+                <label for="targetProtein">Protein (g)</label>
+                <input id="targetProtein" type="number" min="0" step="0.1" value="180" />
+              </div>
+            </div>
+
+            <div class="form-row cols-2">
+              <div>
+                <label for="targetCarbs">Carbs (g)</label>
+                <input id="targetCarbs" type="number" min="0" step="0.1" value="160" />
+              </div>
+              <div>
+                <label for="targetFat">Fat (g)</label>
+                <input id="targetFat" type="number" min="0" step="0.1" value="50" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Totals</h2>
+          <div class="stats">
+            <div class="stat">
+              <div class="stat-top">
+                <div class="stat-name">Calories</div>
+                <div class="stat-val" id="statCalories">0</div>
+              </div>
+              <div class="progress" id="progCalories"><div class="bar" id="barCalories"></div></div>
+              <div class="small" id="remCalories">Remaining: 0</div>
+            </div>
+
+            <div class="stat">
+              <div class="stat-top">
+                <div class="stat-name">Protein</div>
+                <div class="stat-val" id="statProtein">0g</div>
+              </div>
+              <div class="progress" id="progProtein"><div class="bar" id="barProtein"></div></div>
+              <div class="small" id="remProtein">Remaining: 0g</div>
+            </div>
+
+            <div class="stat">
+              <div class="stat-top">
+                <div class="stat-name">Carbs</div>
+                <div class="stat-val" id="statCarbs">0g</div>
+              </div>
+              <div class="progress" id="progCarbs"><div class="bar" id="barCarbs"></div></div>
+              <div class="small" id="remCarbs">Remaining: 0g</div>
+            </div>
+
+            <div class="stat">
+              <div class="stat-top">
+                <div class="stat-name">Fat</div>
+                <div class="stat-val" id="statFat">0g</div>
+              </div>
+              <div class="progress" id="progFat"><div class="bar" id="barFat"></div></div>
+              <div class="small" id="remFat">Remaining: 0g</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Data</h2>
+          <div class="muted">Optional: export/import your current day log (useful if you switch devices).</div>
+          <hr class="sep" />
+          <div class="row-inline">
+            <button class="btn btn-ghost" id="exportLogBtn" type="button">Export today’s log</button>
+            <button class="btn btn-ghost" id="importLogBtn" type="button">Import log</button>
+            <input id="importLogFile" type="file" accept=".json,application/json" hidden />
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      Data stays on-device. If you want cloud sync later, you’ll need a small backend (or a Google Sheets / Firebase layer).
+    </footer>
   </div>
 
-  <div class="input-group">
-    <h2>Select Meal</h2>
-    <select id="mealDropdown"></select>
-    <button onclick="addMeal()">Add Meal</button>
-  </div>
-
-  <div class="manual-entry">
-    <h2>Manual Entry</h2>
-    Name: <input type="text" id="manualName" /><br>
-    Calories: <input type="number" id="manualCalories" /><br>
-    Protein: <input type="number" id="manualProtein" /><br>
-    Carbs: <input type="number" id="manualCarbs" /><br>
-    Fat: <input type="number" id="manualFat" />
-    <button onclick="addManualMeal()">Add Manual Meal</button>
-  </div>
-
-  <div class="totals">
-    <h2>Current Total</h2>
-    <p id="totalCalories">Current Calories: 0</p>
-    <p id="totalProtein">Current Protein: 0</p>
-    <p id="totalCarbs">Current Carbs: 0</p>
-    <p id="totalFat">Current Fat: 0</p>
-    <h2>Remaining Macros</h2>
-    <p id="remainingCalories">Remaining Calories: 0</p>
-    <p id="remainingProtein">Remaining Protein: 0</p>
-    <p id="remainingCarbs">Remaining Carbs: 0</p>
-    <p id="remainingFat">Remaining Fat: 0</p>
-    <button onclick="resetTotals()">Reset Totals</button>
-  </div>
-
-  <div class="meals-list">
-    <h2>Meals Selected</h2>
-    <ul id="selectedMeals"></ul>
-  </div>
-
-  <script>
-    let meals = {};
-    let totalCalories = 0, totalProtein = 0, totalCarbs = 0, totalFat = 0;
-
-    fetch('meals.json')
-      .then(response => response.json())
-      .then(data => {
-        meals = data;
-        const dropdown = document.getElementById('mealDropdown');
-        Object.keys(meals).forEach(meal => {
-          const option = document.createElement('option');
-          option.value = meal;
-          option.textContent = meal;
-          dropdown.appendChild(option);
-        });
-      });
-
-    function updateLabels() {
-      const targetCalories = parseInt(document.getElementById('targetCalories').value) || 0;
-      const targetProtein = parseInt(document.getElementById('targetProtein').value) || 0;
-      const targetCarbs = parseInt(document.getElementById('targetCarbs').value) || 0;
-      const targetFat = parseInt(document.getElementById('targetFat').value) || 0;
-
-      document.getElementById('totalCalories').textContent = `Calories: ${totalCalories}`;
-      document.getElementById('totalProtein').textContent = `Protein: ${totalProtein}`;
-      document.getElementById('totalCarbs').textContent = `Carbs: ${totalCarbs}`;
-      document.getElementById('totalFat').textContent = `Fat: ${totalFat}`;
-
-      document.getElementById('remainingCalories').textContent = `Remaining Calories: ${targetCalories - totalCalories}`;
-      document.getElementById('remainingProtein').textContent = `Remaining Protein: ${targetProtein - totalProtein}`;
-      document.getElementById('remainingCarbs').textContent = `Remaining Carbs: ${targetCarbs - totalCarbs}`;
-      document.getElementById('remainingFat').textContent = `Remaining Fat: ${targetFat - totalFat}`;
-    }
-
-    function addMeal() {
-      const mealName = document.getElementById('mealDropdown').value;
-      const meal = meals[mealName];
-      if (meal) {
-        totalCalories += meal.calories;
-        totalProtein += meal.protein;
-        totalCarbs += meal.carbs;
-        totalFat += meal.fat;
-
-        const li = document.createElement('li');
-        li.textContent = mealName;
-        document.getElementById('selectedMeals').appendChild(li);
-        updateLabels();
-      }
-    }
-
-    function addManualMeal() {
-      const name = document.getElementById('manualName').value;
-      const calories = parseInt(document.getElementById('manualCalories').value) || 0;
-      const protein = parseInt(document.getElementById('manualProtein').value) || 0;
-      const carbs = parseInt(document.getElementById('manualCarbs').value) || 0;
-      const fat = parseInt(document.getElementById('manualFat').value) || 0;
-
-      if (name) {
-        totalCalories += calories;
-        totalProtein += protein;
-        totalCarbs += carbs;
-        totalFat += fat;
-
-        const li = document.createElement('li');
-        li.textContent = `${name} (Manual)`;
-        document.getElementById('selectedMeals').appendChild(li);
-        updateLabels();
-
-        // Clear fields
-        document.getElementById('manualName').value = '';
-        document.getElementById('manualCalories').value = '';
-        document.getElementById('manualProtein').value = '';
-        document.getElementById('manualCarbs').value = '';
-        document.getElementById('manualFat').value = '';
-      }
-    }
-
-    function resetTotals() {
-      totalCalories = 0;
-      totalProtein = 0;
-      totalCarbs = 0;
-      totalFat = 0;
-      document.getElementById('selectedMeals').innerHTML = '';
-      updateLabels();
-    }
-  </script>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
 </body>
 </html>
