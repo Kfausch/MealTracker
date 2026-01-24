@@ -12,6 +12,7 @@
   --accent-p: #3b82f6; /* Blue for Protein */
   --accent-c: #10b981; /* Emerald for Carbs */
   --accent-f: #f59e0b; /* Amber for Fat */
+  --accent-ppc: #2dd4bf; /* Teal for PPC */
   
   --danger: #ef4444;
   --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
@@ -95,6 +96,8 @@ h2 { margin: 0; font-size: 1rem; color: var(--text-muted); text-transform: upper
 .cols-2 > * { flex: 1; }
 .cols-3 > * { flex: 1; }
 .cols-4 > * { flex: 1; }
+.cols-3-flex { display: flex; gap:10px; }
+
 label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 600; }
 input, select {
   width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border);
@@ -129,6 +132,7 @@ input:focus, select:focus { outline: 2px solid var(--primary); border-color: tra
 .macro-p { color: var(--accent-p); }
 .macro-c { color: var(--accent-c); }
 .macro-f { color: var(--accent-f); }
+.macro-ppc { color: var(--accent-ppc); font-weight: 700; }
 
 .recent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
 .recent-item {
@@ -189,3 +193,8 @@ dialog {
 dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
 .modal-content { padding: 20px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+/* RESPONSIVE */
+.full-mobile { width: 100%; }
+.right-align { justify-content: flex-end; }
+@media(min-width: 500px) { .full-mobile { width: auto; } }
