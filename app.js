@@ -18,7 +18,8 @@ let state = {
   log: [],                 // Array of all items with .date property
   manualMeals: {},         // Saved templates
   mealsFromFile: {},       // JSON file data
-  targets: { calories: 2000, protein: 150, carbs: 200, fat: 65 }
+  // UPDATED DEFAULTS HERE
+  targets: { calories: 1800, protein: 180, carbs: 200, fat: 65 }
 };
 
 // UTILS
@@ -166,14 +167,24 @@ function renderLog() {
   dayLog.forEach(item => {
     const el = document.createElement("div");
     el.className = "log-item";
+    
+    // Calculate PPC
+    const cal = num(item.calories);
+    const pro = num(item.protein);
+    // Avoid division by zero, format to 2 decimals, remove trailing zeros if possible
+    let ppc = cal > 0 ? (pro / cal).toFixed(2) : "0";
+    if (ppc.endsWith('0')) ppc = ppc.slice(0, -1);
+    if (ppc.endsWith('.')) ppc = ppc.slice(0, -1);
+
     el.innerHTML = `
       <div class="log-info">
         <h4>${item.name}</h4>
-        <div class="log-sub">${fmt(item.servings)} srv • ${Math.round(item.calories)} kcal</div>
+        <div class="log-sub">${fmt(item.servings)} srv • ${Math.round(cal)} kcal</div>
         <div class="log-macros">
-          <span class="macro-p">P: ${fmt(item.protein)}</span>
+          <span class="macro-p">P: ${fmt(pro)}</span>
           <span class="macro-c">C: ${fmt(item.carbs)}</span>
           <span class="macro-f">F: ${fmt(item.fat)}</span>
+          <span class="macro-ppc" title="Protein Per Calorie">PPC: ${ppc}</span>
         </div>
       </div>
       <button class="btn-ghost" style="font-size:1.2rem;">&rsaquo;</button>
@@ -200,9 +211,6 @@ function updateStats(dayLog) {
   const fPct = totalGrams ? (totals.f / totalGrams) * 100 : 0;
 
   // CSS Conic Gradient logic
-  // P starts at 0, ends at pPct
-  // C starts at pPct, ends at pPct + cPct
-  // F starts at pPct + cPct, ends at 100
   const cStart = pPct;
   const fStart = pPct + cPct;
   
@@ -280,9 +288,6 @@ $("saveEditBtn").addEventListener("click", () => {
   if (!editingId) return;
   const newSrv = num($("editServings").value);
   
-  // If user changed servos, we can auto-recalc from base if available, 
-  // BUT if they manually edited macros, we trust the macro inputs.
-  // For simplicity, we just save the exact macro inputs provided.
   updateEntry(editingId, {
     name: $("editName").value,
     servings: newSrv,
