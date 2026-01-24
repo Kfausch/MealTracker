@@ -1,6 +1,7 @@
 /* Meal Tracker Pro
    - History enabled (keyed by YYYY-MM-DD)
    - Analytics and Recents
+   - Fixed: Add & Save Manual Meal logic
 */
 
 const STORAGE = {
@@ -18,7 +19,6 @@ let state = {
   log: [],                 // Array of all items with .date property
   manualMeals: {},         // Saved templates
   mealsFromFile: {},       // JSON file data
-  // UPDATED DEFAULTS HERE
   targets: { calories: 1800, protein: 180, carbs: 200, fat: 65 }
 };
 
@@ -171,7 +171,7 @@ function renderLog() {
     // Calculate PPC
     const cal = num(item.calories);
     const pro = num(item.protein);
-    // Avoid division by zero, format to 2 decimals, remove trailing zeros if possible
+    // Avoid division by zero, format to 2 decimals
     let ppc = cal > 0 ? (pro / cal).toFixed(2) : "0";
     if (ppc.endsWith('0')) ppc = ppc.slice(0, -1);
     if (ppc.endsWith('.')) ppc = ppc.slice(0, -1);
@@ -211,7 +211,6 @@ function updateStats(dayLog) {
   const fPct = totalGrams ? (totals.f / totalGrams) * 100 : 0;
 
   // CSS Conic Gradient logic
-  const cStart = pPct;
   const fStart = pPct + cPct;
   
   const chart = $("macroDonut");
@@ -337,12 +336,38 @@ async function init() {
     if (all[name]) addEntry(name, all[name], "db", srv);
   });
 
+  // Standard Add Manual
   $("addManualBtn").addEventListener("click", () => {
       const macros = {
           calories: $("manualCalories").value, protein: $("manualProtein").value,
           carbs: $("manualCarbs").value, fat: $("manualFat").value
       };
       addEntry($("manualName").value || "Manual Meal", macros, "manual", $("manualServings").value);
+  });
+
+  // FIXED: Add & Save Manual
+  $("addSaveManualBtn").addEventListener("click", () => {
+    const name = $("manualName").value.trim();
+    if (!name) return toast("Name required to save");
+    
+    const macros = {
+        calories: num($("manualCalories").value),
+        protein: num($("manualProtein").value),
+        carbs: num($("manualCarbs").value),
+        fat: num($("manualFat").value)
+    };
+
+    // 1. Save to library state & persistence
+    state.manualMeals[name] = macros;
+    saveData();
+    
+    // 2. Add to daily log
+    addEntry(name, macros, "manual", $("manualServings").value);
+    
+    // 3. Update dropdown immediately so it appears in Search
+    buildDropdown($("mealSearch").value);
+    
+    toast(`Saved & Added: ${name}`);
   });
   
   $("prevDateBtn").onclick = () => changeDate(-1);
