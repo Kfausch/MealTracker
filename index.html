@@ -124,7 +124,7 @@
 
         <div class="card">
           <h2>Meals selected</h2>
-          <div class="muted">Now includes macros for each item. Remove any entry with one tap.</div>
+          <div class="muted">Shows Cal, P, C, and PPC (protein per calorie) for each item. Remove any entry with one tap.</div>
           <hr class="sep" />
           <div id="selectedMeals" class="log-list"></div>
           <div id="emptyLog" class="muted" style="display:none;">Nothing logged yet.</div>
@@ -138,87 +138,88 @@
 
       <!-- RIGHT COLUMN -->
       <section class="grid">
-        <div class="card">
-          <h2>Daily targets</h2>
-          <div class="muted">Auto‑saved in this browser (localStorage).</div>
-          <hr class="sep" />
-
-          <div class="form">
-            <div class="form-row cols-2">
-              <div>
-                <label for="targetCalories">Calories</label>
-                <input id="targetCalories" type="number" min="0" step="1" value="1800" />
-              </div>
-              <div>
-                <label for="targetProtein">Protein (g)</label>
-                <input id="targetProtein" type="number" min="0" step="0.1" value="180" />
-              </div>
-            </div>
-
-            <div class="form-row cols-2">
-              <div>
-                <label for="targetCarbs">Carbs (g)</label>
-                <input id="targetCarbs" type="number" min="0" step="0.1" value="160" />
-              </div>
-              <div>
-                <label for="targetFat">Fat (g)</label>
-                <input id="targetFat" type="number" min="0" step="0.1" value="50" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <h2>Totals</h2>
-          <div class="stats">
-            <div class="stat">
-              <div class="stat-top">
-                <div class="stat-name">Calories</div>
-                <div class="stat-val" id="statCalories">0</div>
-              </div>
-              <div class="progress" id="progCalories"><div class="bar" id="barCalories"></div></div>
-              <div class="small" id="remCalories">Remaining: 0</div>
-            </div>
-
-            <div class="stat">
-              <div class="stat-top">
-                <div class="stat-name">Protein</div>
-                <div class="stat-val" id="statProtein">0g</div>
-              </div>
-              <div class="progress" id="progProtein"><div class="bar" id="barProtein"></div></div>
-              <div class="small" id="remProtein">Remaining: 0g</div>
-            </div>
-
-            <div class="stat">
-              <div class="stat-top">
-                <div class="stat-name">Carbs</div>
-                <div class="stat-val" id="statCarbs">0g</div>
-              </div>
-              <div class="progress" id="progCarbs"><div class="bar" id="barCarbs"></div></div>
-              <div class="small" id="remCarbs">Remaining: 0g</div>
-            </div>
-
-            <div class="stat">
-              <div class="stat-top">
-                <div class="stat-name">Fat</div>
-                <div class="stat-val" id="statFat">0g</div>
-              </div>
-              <div class="progress" id="progFat"><div class="bar" id="barFat"></div></div>
-              <div class="small" id="remFat">Remaining: 0g</div>
-            </div>
-          </div>
-        </div>
+                <div class="card">
+                  <h2>Totals</h2>
+                  <div class="stats">
+                    <div class="stat">
+                      <div class="stat-top">
+                        <div class="stat-name">Calories</div>
+                        <div class="stat-val" id="statCalories">0</div>
+                      </div>
+                      <div class="progress" id="progCalories"><div class="bar" id="barCalories"></div></div>
+                      <div class="small" id="remCalories">Remaining: 0</div>
+                    </div>
+        
+                    <div class="stat">
+                      <div class="stat-top">
+                        <div class="stat-name">Protein</div>
+                        <div class="stat-val" id="statProtein">0g</div>
+                      </div>
+                      <div class="progress" id="progProtein"><div class="bar" id="barProtein"></div></div>
+                      <div class="small" id="remProtein">Remaining: 0g</div>
+                    </div>
+        
+                    <div class="stat">
+                      <div class="stat-top">
+                        <div class="stat-name">Carbs</div>
+                        <div class="stat-val" id="statCarbs">0g</div>
+                      </div>
+                      <div class="progress" id="progCarbs"><div class="bar" id="barCarbs"></div></div>
+                      <div class="small" id="remCarbs">Remaining: 0g</div>
+                    </div>
+        
+                    <div class="stat">
+                      <div class="stat-top">
+                        <div class="stat-name">Fat</div>
+                        <div class="stat-val" id="statFat">0g</div>
+                      </div>
+                      <div class="progress" id="progFat"><div class="bar" id="barFat"></div></div>
+                      <div class="small" id="remFat">Remaining: 0g</div>
+                    </div>
+                  </div>
+                </div>
 
         <div class="card">
-          <h2>Data</h2>
-          <div class="muted">Optional: export/import your current day log (useful if you switch devices).</div>
-          <hr class="sep" />
-          <div class="row-inline">
-            <button class="btn btn-ghost" id="exportLogBtn" type="button">Export today’s log</button>
-            <button class="btn btn-ghost" id="importLogBtn" type="button">Import log</button>
-            <input id="importLogFile" type="file" accept=".json,application/json" hidden />
-          </div>
-        </div>
+                  <h2>Data</h2>
+                  <div class="muted">Optional: export/import your current day log (useful if you switch devices).</div>
+                  <hr class="sep" />
+                  <div class="row-inline">
+                    <button class="btn btn-ghost" id="exportLogBtn" type="button">Export today’s log</button>
+                    <button class="btn btn-ghost" id="importLogBtn" type="button">Import log</button>
+                    <input id="importLogFile" type="file" accept=".json,application/json" hidden />
+                  </div>
+                </div>
+
+        <div class="card">
+                  <h2>Daily targets</h2>
+                  <div class="muted">Auto‑saved in this browser (localStorage).</div>
+                  <hr class="sep" />
+        
+                  <div class="form">
+                    <div class="form-row cols-2">
+                      <div>
+                        <label for="targetCalories">Calories</label>
+                        <input id="targetCalories" type="number" min="0" step="1" value="1800" />
+                      </div>
+                      <div>
+                        <label for="targetProtein">Protein (g)</label>
+                        <input id="targetProtein" type="number" min="0" step="0.1" value="180" />
+                      </div>
+                    </div>
+        
+                    <div class="form-row cols-2">
+                      <div>
+                        <label for="targetCarbs">Carbs (g)</label>
+                        <input id="targetCarbs" type="number" min="0" step="0.1" value="160" />
+                      </div>
+                      <div>
+                        <label for="targetFat">Fat (g)</label>
+                        <input id="targetFat" type="number" min="0" step="0.1" value="50" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
       </section>
     </main>
 

@@ -43,9 +43,11 @@ function clamp(n, min, max) {
 
 function fmt(n, digits = 1) {
   const x = num(n);
+  if (!Number.isFinite(x)) return "0";
   const rounded = Math.round(x);
   if (Math.abs(x - rounded) < 1e-9) return String(rounded);
-  return x.toFixed(digits).replace(/\.0$/, "");
+  const fixed = x.toFixed(digits);
+  return fixed.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
 }
 
 function toast(msg) {
@@ -188,6 +190,8 @@ function renderLog() {
   host.innerHTML = "";
   $("emptyLog").style.display = logItems.length ? "none" : "block";
 
+  const frag = document.createDocumentFragment();
+
   logItems.forEach((it) => {
     const wrap = document.createElement("div");
     wrap.className = "log-item";
@@ -228,23 +232,30 @@ function renderLog() {
 
     const chips = document.createElement("div");
     chips.className = "macro-chips";
-    chips.appendChild(makeChip(`Cal ${fmt(it.calories)}`));
-    chips.appendChild(makeChip(`P ${fmt(it.protein)}g`));
+
+    const cal = num(it.calories);
+    const pro = num(it.protein);
+    const ppc = cal > 0 ? pro / cal : 0;
+
+    chips.appendChild(makeChip(`Cal ${fmt(cal)}`));
+    chips.appendChild(makeChip(`P ${fmt(pro)}g`));
     chips.appendChild(makeChip(`C ${fmt(it.carbs)}g`));
-    chips.appendChild(makeChip(`F ${fmt(it.fat)}g`));
+    chips.appendChild(makeChip(`PPC ${fmt(ppc, 3)}`, "Protein per calorie (protein ÷ calories)"));
 
     wrap.appendChild(top);
     wrap.appendChild(chips);
-    host.appendChild(wrap);
+    frag.appendChild(wrap);
   });
 
+  host.appendChild(frag);
   updateStats();
 }
 
-function makeChip(text) {
+function makeChip(text, title) {
   const el = document.createElement("div");
   el.className = "chip";
   el.textContent = text;
+  if (title) el.title = title;
   return el;
 }
 
