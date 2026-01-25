@@ -119,7 +119,7 @@
         <div class="card">
           <div class="card-header">
             <h2>Daily Log</h2>
-            <div class="loader" id="logLoader" style="display:none;">Syncing...</div>
+             <div class="loader" id="logLoader" style="display:none;">Syncing...</div>
           </div>
           <hr class="sep" />
           <div id="selectedMeals" class="log-list"></div>
@@ -172,7 +172,7 @@
 
         <div class="card collapsed-section">
           <details>
-            <summary>Targets</summary>
+            <summary>Targets & Settings</summary>
             <div class="details-content">
               <h3>Daily Targets</h3>
               <div class="muted" style="margin-bottom:10px;">Changes auto-save to cloud.</div>
@@ -184,6 +184,16 @@
                   <div><label>Fat</label><input id="targetFat" type="number" /></div>
                 </div>
               </div>
+              
+              <hr class="sep" />
+              
+              <h3>Library Management</h3>
+              <div class="muted" style="margin-bottom:10px;">
+                Import the default food list (Chicken, Rice, etc) into your personal database so you can edit them.
+              </div>
+              <button class="btn full-width" id="btnImportDefaults">Import Defaults from JSON</button>
+              <div id="importStatus" class="muted text-center" style="margin-top:5px;"></div>
+              
             </div>
           </details>
         </div>
