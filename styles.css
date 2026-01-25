@@ -240,3 +240,33 @@ dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
 .loader { font-size: 0.8rem; color: var(--primary); animation: pulse 1.5s infinite; }
 @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
+/* SETTINGS & LIBRARY STYLES */
+.large-modal { max-width: 600px; width: 100%; }
+
+.modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 10px;
+}
+.modal-header h2 { margin: 0; font-size: 1.25rem; }
+
+.library-list-container {
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.1);
+  margin-top: 10px;
+}
+
+.lib-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.lib-item:last-child { border-bottom: none; }
+.lib-item:hover { background: rgba(255,255,255,0.05); }
+
+.lib-info { font-size: 0.9rem; font-weight: 600; }
+.lib-meta { font-size: 0.8rem; color: var(--text-muted); }
