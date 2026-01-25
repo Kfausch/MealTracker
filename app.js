@@ -55,7 +55,6 @@ function updateAuthUI(user) {
   if (user) {
     $("authOverlay").classList.add("hidden");
     $("appContainer").classList.add("active");
-    // $("userEmailDisplay").textContent = user.email; // Removed from header to save space
     initUserData(user.uid);
   } else {
     $("authOverlay").classList.remove("hidden");
@@ -139,7 +138,6 @@ async function initUserData(uid) {
 // Save Targets
 async function saveTargets() {
   if (!state.user) return;
-  // Get values from input
   state.targets = {
     calories: num($("targetCalories").value),
     protein: num($("targetProtein").value),
@@ -150,7 +148,7 @@ async function saveTargets() {
   const ref = doc(db, "users", state.user.uid, "data", "settings");
   await setDoc(ref, state.targets, { merge: true });
   toast("Targets updated!");
-  render(); // Update UI bars
+  render(); 
 }
 
 // IMPORT DEFAULTS (Batch Write)
@@ -449,24 +447,48 @@ function renderSettingsLibrary() {
 let editingLibId = null;
 
 function openEditLibModal(item) {
-  editingLibId = item.id;
-  $("libName").value = item.name;
-  $("libCal").value = item.calories;
-  $("libPro").value = item.protein;
-  $("libCarb").value = item.carbs;
-  $("libFat").value = item.fat;
+  // If item is null, we are ADDING a new one
+  if (!item) {
+    editingLibId = null;
+    $("libModalTitle").textContent = "Add New Food";
+    $("libName").value = "";
+    $("libCal").value = "";
+    $("libPro").value = "";
+    $("libCarb").value = "";
+    $("libFat").value = "";
+    $("deleteLibBtn").style.display = "none"; // Hide delete for new items
+  } else {
+    // If item exists, we are EDITING
+    editingLibId = item.id;
+    $("libModalTitle").textContent = "Edit Saved Meal";
+    $("libName").value = item.name;
+    $("libCal").value = item.calories;
+    $("libPro").value = item.protein;
+    $("libCarb").value = item.carbs;
+    $("libFat").value = item.fat;
+    $("deleteLibBtn").style.display = "inline-block"; // Show delete
+  }
   $("editLibModal").showModal();
 }
 
 $("saveLibBtn").onclick = async () => {
-  if(!editingLibId) return;
-  await updateLibraryMeal(editingLibId, {
-    name: $("libName").value,
+  const name = $("libName").value.trim();
+  if (!name) return toast("Name required");
+  
+  const macros = {
     calories: num($("libCal").value),
     protein: num($("libPro").value),
     carbs: num($("libCarb").value),
     fat: num($("libFat").value)
-  });
+  };
+
+  if(editingLibId) {
+    // Update existing
+    await updateLibraryMeal(editingLibId, { name, ...macros });
+  } else {
+    // Create new
+    await saveToLibrary(name, macros);
+  }
   $("editLibModal").close();
 };
 
@@ -477,6 +499,7 @@ $("deleteLibBtn").onclick = async () => {
 };
 
 $("closeLibBtn").onclick = () => $("editLibModal").close();
+$("btnAddLibItem").onclick = () => openEditLibModal(null); // Open blank
 
 
 // ---- INIT ----
