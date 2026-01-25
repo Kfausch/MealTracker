@@ -110,12 +110,15 @@ input:focus, select:focus { outline: 2px solid var(--primary); border-color: tra
   padding: 10px 16px; border-radius: 8px; border: 1px solid var(--border);
   background: var(--bg-card); color: var(--text); font-weight: 600; cursor: pointer;
   transition: filter 0.2s;
+  text-align: center;
 }
 .btn:hover { filter: brightness(1.1); }
 .btn-primary { background: var(--primary); border-color: var(--primary); color: white; }
 .btn-secondary { background: var(--accent-c); border-color: var(--accent-c); color: white; }
+.btn-danger { background: rgba(239, 68, 68, 0.2); border-color: var(--danger); color: var(--danger); }
+.btn-danger:hover { background: var(--danger); color: white; }
 .btn-xs { padding: 4px 8px; font-size: 0.75rem; }
-.btn-ghost { background: transparent; border: none; color: var(--text-muted); }
+.btn-ghost { background: transparent; border: none; color: var(--text-muted); padding: 8px 12px; }
 
 /* LISTS & RECENTS */
 .log-list { display: grid; gap: 8px; }
@@ -185,7 +188,7 @@ input:focus, select:focus { outline: 2px solid var(--primary); border-color: tra
 }
 .toast.show { opacity: 1; }
 
-/* DIALOG */
+/* DIALOG (Base) */
 dialog {
   background: var(--bg-card); color: var(--text); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 0; max-width: 400px; width: 100%;
@@ -193,13 +196,6 @@ dialog {
 dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
 .modal-content { padding: 20px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-
-/* RESPONSIVE */
-.full-mobile { width: 100%; }
-.right-align { justify-content: flex-end; }
-@media(min-width: 500px) { .full-mobile { width: auto; } }
-
-/* Add these new styles at the bottom */
 
 /* AUTH OVERLAY */
 .auth-overlay {
@@ -209,7 +205,6 @@ dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
   z-index: 1000;
   padding: 20px;
 }
-
 .auth-overlay.hidden { display: none; }
 .container.blurred { filter: blur(5px); pointer-events: none; }
 .container.blurred.active { filter: none; pointer-events: all; }
@@ -224,49 +219,66 @@ dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
   width: 100%;
   text-align: center;
 }
-
 .auth-box h2 { font-size: 1.5rem; margin-bottom: 8px; color: var(--text); }
 .logo-large {
   width: 60px; height: 60px; margin: 0 auto 20px;
   border-radius: 18px;
   background: linear-gradient(135deg, var(--primary), var(--accent-c));
 }
-
 .auth-form { display: grid; gap: 14px; margin-top: 24px; }
 .auth-form input { padding: 12px; font-size: 1rem; }
 .full-width { width: 100%; justify-content: center; }
 .error-msg { color: var(--danger); font-size: 0.9rem; min-height: 1.2em; }
-
 .loader { font-size: 0.8rem; color: var(--primary); animation: pulse 1.5s infinite; }
 @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
-/* SETTINGS & LIBRARY STYLES */
-.large-modal { max-width: 600px; width: 100%; }
+/* SETTINGS & LIBRARY STYLES (RESPONSIVE FIX) */
+.large-modal { 
+  width: min(95vw, 850px); 
+  max-width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; 
+}
 
 .modal-header {
   display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
+  flex-shrink: 0;
 }
-.modal-header h2 { margin: 0; font-size: 1.25rem; }
+.modal-header h2 { margin: 0; font-size: 1.4rem; }
 
 .library-list-container {
-  max-height: 250px;
   overflow-y: auto;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: rgba(0,0,0,0.1);
   margin-top: 10px;
+  flex-grow: 1;
+  min-height: 300px;
+}
+
+/* Adjust list height on small mobile screens */
+@media (max-height: 600px) {
+  .library-list-container {
+    min-height: 150px;
+  }
 }
 
 .lib-item {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 10px;
+  padding: 12px 14px;
   border-bottom: 1px solid var(--border);
   cursor: pointer;
   transition: background 0.2s;
 }
 .lib-item:last-child { border-bottom: none; }
 .lib-item:hover { background: rgba(255,255,255,0.05); }
+.lib-info { font-size: 0.95rem; font-weight: 600; }
+.lib-meta { font-size: 0.85rem; color: var(--text-muted); margin-top:2px; }
 
-.lib-info { font-size: 0.9rem; font-weight: 600; }
-.lib-meta { font-size: 0.8rem; color: var(--text-muted); }
+/* RESPONSIVE HELPERS */
+.full-mobile { width: 100%; }
+.right-align { justify-content: flex-end; }
+@media(min-width: 500px) { .full-mobile { width: auto; } }
