@@ -232,12 +232,18 @@ dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
 
 /* === NEW SETTINGS & LIBRARY STYLES === */
 
-/* Override the base dialog limit for the Settings modal */
 #settingsModal {
-  max-width: 850px;       /* Allow it to grow wide on desktop */
-  width: min(95vw, 850px); /* 95% width on mobile, capped at 850px on desktop */
+  max-width: 850px;
+  width: min(95vw, 850px);
   max-height: 90vh;
-  display: flex; flex-direction: column; overflow: hidden;
+  /* Removed display: flex; so it stays hidden when closed! */
+}
+
+/* Only display flex when the modal is actually OPEN */
+#settingsModal[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .modal-header {
