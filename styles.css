@@ -6,13 +6,13 @@
   --text-muted: #94a3b8;
   --border: #334155;
   
-  --primary: #8b5cf6; /* Violet */
+  --primary: #8b5cf6;
   --primary-hover: #7c3aed;
   
-  --accent-p: #3b82f6; /* Blue */
-  --accent-c: #10b981; /* Emerald */
-  --accent-f: #f59e0b; /* Amber */
-  --accent-ppc: #2dd4bf; /* Teal */
+  --accent-p: #3b82f6; 
+  --accent-c: #10b981; 
+  --accent-f: #f59e0b; 
+  --accent-ppc: #2dd4bf; 
   
   --danger: #ef4444;
   --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
@@ -93,14 +93,13 @@ h2 { margin: 0; font-size: 1rem; color: var(--text-muted); text-transform: upper
 .cols-4 > * { flex: 1; }
 .cols-3-flex { display: flex; gap:10px; }
 
-/* NEW: Responsive Grid for Settings (Fixes mobile scrolling) */
 .responsive-row {
   display: grid;
-  grid-template-columns: 1fr 1fr; /* Default to 2 columns on mobile */
+  grid-template-columns: 1fr 1fr; 
   gap: 10px;
 }
 @media(min-width: 600px) {
-  .responsive-row { grid-template-columns: 1fr 1fr 1fr 1fr; } /* 4 columns on desktop */
+  .responsive-row { grid-template-columns: 1fr 1fr 1fr 1fr; } 
 }
 
 label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 600; }
@@ -123,6 +122,7 @@ input:focus, select:focus { outline: 2px solid var(--primary); border-color: tra
 .btn-danger:hover { background: var(--danger); color: white; }
 .btn-xs { padding: 4px 8px; font-size: 0.75rem; }
 .btn-ghost { background: transparent; border: none; color: var(--text-muted); padding: 8px 12px; cursor: pointer; }
+.btn-sm { padding: 8px 12px; font-size: 0.85rem; }
 
 /* LISTS & RECENTS */
 .log-list { display: grid; gap: 8px; }
@@ -192,7 +192,7 @@ input:focus, select:focus { outline: 2px solid var(--primary); border-color: tra
 }
 .toast.show { opacity: 1; }
 
-/* DIALOG (Base for small modals) */
+/* DIALOG (Base) */
 dialog {
   background: var(--bg-card); color: var(--text); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 0; max-width: 400px; width: 100%;
@@ -230,20 +230,31 @@ dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
 .loader { font-size: 0.8rem; color: var(--primary); animation: pulse 1.5s infinite; }
 @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
-/* === NEW SETTINGS & LIBRARY STYLES === */
+/* === SETTINGS & LIBRARY STYLES (Fixed Scrolling) === */
 
 #settingsModal {
   max-width: 850px;
   width: min(95vw, 850px);
   max-height: 90vh;
-  /* Removed display: flex; so it stays hidden when closed! */
+  /* Padding must be on modal-content to not clip scrollbars */
+  padding: 0; 
+  border: 1px solid var(--border);
 }
 
-/* Only display flex when the modal is actually OPEN */
+/* Flex layout applied when open to manage internal height */
 #settingsModal[open] {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+}
+
+/* Wrapper inside dialog handles the scrolling logic */
+.modal-content.large-modal {
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Fill the dialog */
+  max-height: 90vh;
+  overflow: hidden; /* Hide overflow on the wrapper */
+  box-sizing: border-box;
 }
 
 .modal-header {
@@ -252,14 +263,21 @@ dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
 }
 .modal-header h2 { margin: 0; font-size: 1.4rem; }
 
+/* The list container takes remaining space and scrolls internally */
 .library-list-container {
-  overflow-y: auto; border: 1px solid var(--border); border-radius: 8px;
-  background: rgba(0,0,0,0.1); margin-top: 10px;
-  flex-grow: 1; min-height: 250px;
+  overflow-y: auto; 
+  border: 1px solid var(--border); 
+  border-radius: 8px;
+  background: rgba(0,0,0,0.1); 
+  margin-top: 10px;
+  flex-grow: 1; 
+  min-height: 200px; /* Ensure at least some list is visible */
 }
-@media (max-height: 600px) {
-  .library-list-container { min-height: 150px; }
-}
+
+/* Optional: Scrollbar styling for Webkit */
+.library-list-container::-webkit-scrollbar { width: 8px; }
+.library-list-container::-webkit-scrollbar-track { background: transparent; }
+.library-list-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
 .lib-item {
   display: flex; justify-content: space-between; align-items: center;
