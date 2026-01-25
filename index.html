@@ -36,9 +36,9 @@
       </div>
 
       <div class="top-actions">
-        <span id="userEmailDisplay" class="badge"></span>
-        <button class="btn btn-ghost" id="btnLogout" type="button">Log Out</button>
+        <button class="btn btn-ghost" id="btnSettings" type="button">Settings ⚙️</button>
         <button class="btn btn-ghost" id="themeToggle" type="button">Theme</button>
+        <button class="btn btn-ghost" id="btnLogout" type="button">Log Out</button>
       </div>
     </header>
 
@@ -85,7 +85,7 @@
           </div>
 
           <div class="tab-content hidden" id="tab-recent">
-            <div class="muted" style="margin-bottom:10px;">Quickly add meals you've eaten recently.</div>
+            <div class="muted" style="margin-bottom:10px;">Meals from your history (Synced across devices).</div>
             <div id="recentList" class="recent-grid"></div>
             <div id="noRecents" class="muted text-center" style="padding:20px;">No recent history yet.</div>
           </div>
@@ -109,8 +109,8 @@
                 <div><label>Fat</label><input id="manualFat" type="number" placeholder="0" /></div>
               </div>
               <div class="row-inline">
-                <button class="btn btn-primary" id="addManualBtn" type="button">Add</button>
-                <button class="btn btn-secondary" id="addSaveManualBtn" type="button">Add & Save</button>
+                <button class="btn btn-secondary" id="addSaveManualBtn" type="button">Add & Save to Library</button>
+                <button class="btn" id="addManualBtn" type="button">Add Log Only</button>
               </div>
             </div>
           </div>
@@ -169,34 +169,6 @@
             </div>
           </div>
         </div>
-
-        <div class="card collapsed-section">
-          <details>
-            <summary>Targets & Settings</summary>
-            <div class="details-content">
-              <h3>Daily Targets</h3>
-              <div class="muted" style="margin-bottom:10px;">Changes auto-save to cloud.</div>
-              <div class="form">
-                <div class="form-row cols-2">
-                  <div><label>Calories</label><input id="targetCalories" type="number" /></div>
-                  <div><label>Protein</label><input id="targetProtein" type="number" /></div>
-                  <div><label>Carbs</label><input id="targetCarbs" type="number" /></div>
-                  <div><label>Fat</label><input id="targetFat" type="number" /></div>
-                </div>
-              </div>
-              
-              <hr class="sep" />
-              
-              <h3>Library Management</h3>
-              <div class="muted" style="margin-bottom:10px;">
-                Import the default food list (Chicken, Rice, etc) into your personal database so you can edit them.
-              </div>
-              <button class="btn full-width" id="btnImportDefaults">Import Defaults from JSON</button>
-              <div id="importStatus" class="muted text-center" style="margin-top:5px;"></div>
-              
-            </div>
-          </details>
-        </div>
       </section>
     </main>
 
@@ -205,9 +177,46 @@
     </footer>
   </div>
 
+  <dialog id="settingsModal" class="modal">
+    <div class="modal-content large-modal">
+      <div class="modal-header">
+        <h2>App Settings</h2>
+        <button class="btn-ghost" id="closeSettingsBtn" style="font-size:1.5rem;">✕</button>
+      </div>
+      
+      <h3>Daily Targets</h3>
+      <div class="form">
+        <div class="form-row cols-2">
+          <div><label>Calories</label><input id="targetCalories" type="number" /></div>
+          <div><label>Protein</label><input id="targetProtein" type="number" /></div>
+          <div><label>Carbs</label><input id="targetCarbs" type="number" /></div>
+          <div><label>Fat</label><input id="targetFat" type="number" /></div>
+        </div>
+        <button class="btn btn-primary" id="saveTargetsBtn">Update Targets</button>
+      </div>
+
+      <hr class="sep" />
+
+      <h3>Manage Food Library</h3>
+      <div class="muted">Edit or delete foods saved in your database.</div>
+      <div style="margin:10px 0;">
+        <input id="libSearch" type="search" placeholder="Search saved foods..." />
+      </div>
+      
+      <div id="libraryList" class="library-list-container">
+        </div>
+
+      <hr class="sep" />
+      <h3>Tools</h3>
+      <button class="btn" id="btnImportDefaults">Import Default JSON Library</button>
+      <div id="importStatus" class="muted" style="margin-top:5px;"></div>
+
+    </div>
+  </dialog>
+
   <dialog id="editModal" class="modal">
     <div class="modal-content">
-      <h3>Edit Entry</h3>
+      <h3>Edit Log Entry</h3>
       <div class="form">
         <label>Name</label>
         <input id="editName" type="text" />
@@ -224,6 +233,27 @@
       <div class="modal-actions">
         <button class="btn" id="closeEditBtn">Cancel</button>
         <button class="btn btn-primary" id="saveEditBtn">Save Changes</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="editLibModal" class="modal">
+    <div class="modal-content">
+      <h3>Edit Saved Meal</h3>
+      <div class="form">
+        <label>Name</label>
+        <input id="libName" type="text" />
+        <div class="form-row cols-2">
+          <div><label>Calories</label><input id="libCal" type="number" /></div>
+          <div><label>Protein</label><input id="libPro" type="number" /></div>
+          <div><label>Carbs</label><input id="libCarb" type="number" /></div>
+          <div><label>Fat</label><input id="libFat" type="number" /></div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-danger" id="deleteLibBtn">Delete</button>
+        <button class="btn" id="closeLibBtn">Cancel</button>
+        <button class="btn btn-primary" id="saveLibBtn">Save Changes</button>
       </div>
     </div>
   </dialog>
