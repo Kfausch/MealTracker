@@ -11,7 +11,7 @@ import {
 // --- CONFIGURATION ---
 // PASTE YOUR FIREBASE CONFIG HERE (Use the one from your screenshot)
 const firebaseConfig = {
-  apiKey: "AIzaSyCBTp6Mcg_dSgmIJXmQOddYVgBZTeiFxJc",
+  apiKey: "AIzaSyCBTp6Mcg_dSgmlJXmQOddYVgBZTeiFxJc",
   authDomain: "meal-tracker-1485f.firebaseapp.com",
   projectId: "meal-tracker-1485f",
   storageBucket: "meal-tracker-1485f.firebasestorage.app",
@@ -467,3 +467,4 @@ function render() {
 }
 
 document.addEventListener("DOMContentLoaded", init);
+
