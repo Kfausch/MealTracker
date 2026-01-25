@@ -199,8 +199,10 @@
 
       <h3>Manage Food Library</h3>
       <div class="muted">Edit or delete foods saved in your database.</div>
-      <div style="margin:10px 0;">
-        <input id="libSearch" type="search" placeholder="Search saved foods..." />
+      
+      <div style="display:flex; gap:10px; margin:10px 0;">
+        <input id="libSearch" type="search" placeholder="Search saved foods..." style="flex-grow:1;" />
+        <button class="btn btn-primary btn-sm" id="btnAddLibItem">+ Add New</button>
       </div>
       
       <div id="libraryList" class="library-list-container">
@@ -239,15 +241,15 @@
 
   <dialog id="editLibModal" class="modal">
     <div class="modal-content">
-      <h3>Edit Saved Meal</h3>
+      <h3 id="libModalTitle">Edit Saved Meal</h3>
       <div class="form">
         <label>Name</label>
-        <input id="libName" type="text" />
+        <input id="libName" type="text" placeholder="e.g. Oatmeal" />
         <div class="form-row cols-2">
-          <div><label>Calories</label><input id="libCal" type="number" /></div>
-          <div><label>Protein</label><input id="libPro" type="number" /></div>
-          <div><label>Carbs</label><input id="libCarb" type="number" /></div>
-          <div><label>Fat</label><input id="libFat" type="number" /></div>
+          <div><label>Calories</label><input id="libCal" type="number" placeholder="0" /></div>
+          <div><label>Protein</label><input id="libPro" type="number" placeholder="0" /></div>
+          <div><label>Carbs</label><input id="libCarb" type="number" placeholder="0" /></div>
+          <div><label>Fat</label><input id="libFat" type="number" placeholder="0" /></div>
         </div>
       </div>
       <div class="modal-actions">
