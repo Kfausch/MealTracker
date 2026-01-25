@@ -10,6 +10,7 @@ import {
 
 // --- CONFIGURATION ---
 // PASTE YOUR FIREBASE CONFIG HERE (Use the one from your screenshot)
+// --- CONFIGURATION ---
 const firebaseConfig = {
   apiKey: "AIzaSyCBTp6Mcg_dSgmlJXmQOddYVgBZTeiFxJc",
   authDomain: "meal-tracker-1485f.firebaseapp.com",
@@ -467,4 +468,5 @@ function render() {
 }
 
 document.addEventListener("DOMContentLoaded", init);
+
 
