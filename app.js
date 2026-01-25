@@ -1,31 +1,45 @@
-/* Meal Tracker Pro
-   - History enabled (keyed by YYYY-MM-DD)
-   - Analytics and Recents
-   - Fixed: Add & Save Manual Meal logic
-*/
+// Import Firebase SDKs
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { 
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { 
+  getFirestore, collection, doc, setDoc, addDoc, updateDoc, deleteDoc, 
+  query, where, orderBy, onSnapshot, getDoc 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const STORAGE = {
-  TARGETS: "mt_targets_v2",
-  MANUAL: "mt_manual_v2",
-  LOG: "mt_log_v2",
-  THEME: "mt_theme_v2"
+// --- CONFIGURATION ---
+// TODO: PASTE YOUR FIREBASE CONFIG HERE
+const firebaseConfig = {
+  apiKey: "AIzaSyCBTp6Mcg_dSgmlJXmQOddYVgBZTeiFxJc",
+  authDomain: "meal-tracker-1485f.firebaseapp.com",
+  projectId: "meal-tracker-1485f",
+  storageBucket: "meal-tracker-1485f.firebasestorage.app",
+  messagingSenderId: "224736246706",
+  appId: "1:224736246706:web:b3355480fb58fecb8d02ab",
+  measurementId: "G-XNH01HJJK6"
 };
 
-const $ = (id) => document.getElementById(id);
+// Init Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 // STATE
 let state = {
-  currentDate: new Date(), // Date object
-  log: [],                 // Array of all items with .date property
-  manualMeals: {},         // Saved templates
-  mealsFromFile: {},       // JSON file data
-  targets: { calories: 1800, protein: 180, carbs: 200, fat: 65 }
+  user: null, // Logged in user
+  currentDate: new Date(),
+  log: [],          
+  manualMeals: {},  
+  mealsFromFile: {},
+  targets: { calories: 1800, protein: 180, carbs: 200, fat: 65 },
+  unsubscribeLog: null // To stop listening when logging out
 };
 
-// UTILS
+// DOM Elements
+const $ = (id) => document.getElementById(id);
 const num = (v) => parseFloat(v) || 0;
 const fmt = (v) => Number.isFinite(v) ? Math.round(v * 10) / 10 : 0;
-const uuid = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
 const toISODate = (d) => d.toISOString().split('T')[0];
 
 function toast(msg) {
@@ -35,88 +49,154 @@ function toast(msg) {
   setTimeout(() => t.classList.remove("show"), 2000);
 }
 
-// ---- DATA LAYER ----
+// ---- AUTHENTICATION ----
 
-function loadData() {
-  // Theme
-  const th = localStorage.getItem(STORAGE.THEME) || "dark";
-  document.documentElement.setAttribute("data-theme", th);
-
-  // Targets
-  const savedTargets = JSON.parse(localStorage.getItem(STORAGE.TARGETS));
-  if (savedTargets) state.targets = { ...state.targets, ...savedTargets };
-  $("targetCalories").value = state.targets.calories;
-  $("targetProtein").value = state.targets.protein;
-  $("targetCarbs").value = state.targets.carbs;
-  $("targetFat").value = state.targets.fat;
-
-  // Manual Meals
-  state.manualMeals = JSON.parse(localStorage.getItem(STORAGE.MANUAL)) || {};
-
-  // Log & Migration
-  const rawLog = JSON.parse(localStorage.getItem(STORAGE.LOG));
-  if (rawLog && Array.isArray(rawLog.items)) {
-    // Migrate v1 data (no date) to today
-    const todayStr = toISODate(new Date());
-    state.log = rawLog.items.map(item => ({
-      ...item,
-      date: item.date || todayStr // Backfill date if missing
-    }));
-  } else if (Array.isArray(rawLog)) {
-    state.log = rawLog; // v2 format
+function updateAuthUI(user) {
+  state.user = user;
+  if (user) {
+    $("authOverlay").classList.add("hidden");
+    $("appContainer").classList.add("active");
+    $("userEmailDisplay").textContent = user.email;
+    initUserData(user.uid);
   } else {
+    $("authOverlay").classList.remove("hidden");
+    $("appContainer").classList.remove("active");
+    $("userEmailDisplay").textContent = "";
+    // Clear data
     state.log = [];
+    state.manualMeals = {};
+    if (state.unsubscribeLog) state.unsubscribeLog();
   }
 }
 
-function saveData() {
-  localStorage.setItem(STORAGE.LOG, JSON.stringify(state.log));
-  localStorage.setItem(STORAGE.MANUAL, JSON.stringify(state.manualMeals));
-  localStorage.setItem(STORAGE.TARGETS, JSON.stringify(state.targets));
+$("btnLogin").addEventListener("click", async (e) => {
+  e.preventDefault();
+  const email = $("authEmail").value;
+  const pass = $("authPass").value;
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch (err) {
+    $("authError").textContent = "Login failed: " + err.message;
+  }
+});
+
+$("btnSignup").addEventListener("click", async (e) => {
+  e.preventDefault();
+  const email = $("authEmail").value;
+  const pass = $("authPass").value;
+  try {
+    await createUserWithEmailAndPassword(auth, email, pass);
+    toast("Account created!");
+  } catch (err) {
+    $("authError").textContent = err.message;
+  }
+});
+
+$("btnLogout").addEventListener("click", () => signOut(auth));
+
+// ---- DATABASE SYNC ----
+
+async function initUserData(uid) {
+  // 1. Load User Settings (Targets)
+  const settingsRef = doc(db, "users", uid, "data", "settings");
+  try {
+    const snap = await getDoc(settingsRef);
+    if (snap.exists()) {
+      state.targets = { ...state.targets, ...snap.data() };
+    }
+    updateTargetInputs();
+  } catch(e) { console.error(e); }
+
+  // 2. Load Manual Meals (Saved items)
+  const manualRef = doc(db, "users", uid, "data", "manual_meals");
+  try {
+    const snap = await getDoc(manualRef);
+    if (snap.exists()) {
+      state.manualMeals = snap.data();
+    }
+    buildDropdown(); // Refresh dropdown with saved meals
+  } catch(e) { console.error(e); }
+
+  // 3. Realtime Listener for Daily Logs
+  const logRef = collection(db, "users", uid, "logs");
+  // We grab ALL history for analytics, but we could limit this for performance later
+  const q = query(logRef, orderBy("createdAt", "desc"));
+  
+  $("logLoader").style.display = "block";
+  
+  state.unsubscribeLog = onSnapshot(q, (snapshot) => {
+    state.log = [];
+    snapshot.forEach((doc) => {
+      state.log.push({ id: doc.id, ...doc.data() });
+    });
+    $("logLoader").style.display = "none";
+    render(); // Re-render whenever DB changes
+  });
 }
 
 // ---- LOGIC ----
+
+// Save Targets to DB
+async function saveTargets() {
+  if (!state.user) return;
+  const ref = doc(db, "users", state.user.uid, "data", "settings");
+  await setDoc(ref, state.targets, { merge: true });
+}
+
+// Save Manual Meal Library to DB
+async function saveManualMeals() {
+  if (!state.user) return;
+  const ref = doc(db, "users", state.user.uid, "data", "manual_meals");
+  await setDoc(ref, state.manualMeals);
+}
+
+// Add Entry -> Writes to Firestore
+async function addEntry(name, macros, source, servings = 1) {
+  if (!state.user) return;
+  const s = num(servings);
+  const entry = {
+    date: toISODate(state.currentDate),
+    createdAt: Date.now(),
+    name: name,
+    source: source,
+    servings: s,
+    calories: num(macros.calories) * s,
+    protein: num(macros.protein) * s,
+    carbs: num(macros.carbs) * s,
+    fat: num(macros.fat) * s,
+    base: { ...macros } // Store base for editing
+  };
+  
+  try {
+    await addDoc(collection(db, "users", state.user.uid, "logs"), entry);
+    toast(`Added: ${name}`);
+  } catch (e) {
+    toast("Error adding entry");
+    console.error(e);
+  }
+}
+
+// Update Entry -> Writes to Firestore
+async function updateEntryInDB(id, data) {
+  if (!state.user) return;
+  const ref = doc(db, "users", state.user.uid, "logs", id);
+  await updateDoc(ref, data);
+  toast("Updated");
+}
+
+// Delete Entry -> Deletes from Firestore
+async function deleteEntry(id) {
+  if (!state.user) return;
+  if(!confirm("Remove this item?")) return;
+  await deleteDoc(doc(db, "users", state.user.uid, "logs", id));
+}
+
+// ---- UI RENDERING (Similar to before, but simplified) ----
 
 function getDayLog() {
   const dateStr = toISODate(state.currentDate);
   return state.log.filter(i => i.date === dateStr);
 }
-
-function addEntry(name, macros, source, servings = 1) {
-  const entry = {
-    id: uuid(),
-    date: toISODate(state.currentDate),
-    name: name,
-    source: source, // 'db', 'manual', 'recent'
-    servings: num(servings),
-    calories: num(macros.calories) * num(servings),
-    protein: num(macros.protein) * num(servings),
-    carbs: num(macros.carbs) * num(servings),
-    fat: num(macros.fat) * num(servings),
-    base: { ...macros } // Store base macros for editing scaling
-  };
-  state.log.unshift(entry);
-  saveData();
-  render();
-  toast(`Added: ${name}`);
-}
-
-function updateEntry(id, newVals) {
-  const idx = state.log.findIndex(x => x.id === id);
-  if (idx === -1) return;
-  state.log[idx] = { ...state.log[idx], ...newVals };
-  saveData();
-  render();
-  toast("Entry updated");
-}
-
-function deleteEntry(id) {
-  state.log = state.log.filter(x => x.id !== id);
-  saveData();
-  render();
-}
-
-// ---- UI RENDERING ----
 
 function updateDateDisplay() {
   const now = new Date();
@@ -131,17 +211,12 @@ function updateDateDisplay() {
 function renderRecents() {
   const host = $("recentList");
   host.innerHTML = "";
-  
-  // Find unique meal names from history, sorted by usage recency
   const map = new Map();
   state.log.forEach(item => {
-    if (!map.has(item.name) && item.base) {
-      map.set(item.name, item.base);
-    }
+    if (!map.has(item.name) && item.base) map.set(item.name, item.base);
   });
-
-  const recents = Array.from(map.entries()).slice(0, 12); // Last 12 unique items
-
+  const recents = Array.from(map.entries()).slice(0, 12);
+  
   if (recents.length === 0) {
     $("noRecents").classList.remove("hidden");
     return;
@@ -168,10 +243,9 @@ function renderLog() {
     const el = document.createElement("div");
     el.className = "log-item";
     
-    // Calculate PPC
+    // PPC Calc
     const cal = num(item.calories);
     const pro = num(item.protein);
-    // Avoid division by zero, format to 2 decimals
     let ppc = cal > 0 ? (pro / cal).toFixed(2) : "0";
     if (ppc.endsWith('0')) ppc = ppc.slice(0, -1);
     if (ppc.endsWith('.')) ppc = ppc.slice(0, -1);
@@ -184,12 +258,20 @@ function renderLog() {
           <span class="macro-p">P: ${fmt(pro)}</span>
           <span class="macro-c">C: ${fmt(item.carbs)}</span>
           <span class="macro-f">F: ${fmt(item.fat)}</span>
-          <span class="macro-ppc" title="Protein Per Calorie">PPC: ${ppc}</span>
+          <span class="macro-ppc">PPC: ${ppc}</span>
         </div>
       </div>
-      <button class="btn-ghost" style="font-size:1.2rem;">&rsaquo;</button>
+      <div style="display:flex; gap:10px;">
+        <button class="btn-ghost edit-trigger" style="font-size:1.2rem;">✎</button>
+        <button class="btn-ghost delete-trigger" style="color:var(--danger);">✕</button>
+      </div>
     `;
-    el.onclick = () => openEditModal(item);
+    
+    el.querySelector(".edit-trigger").onclick = () => openEditModal(item);
+    el.querySelector(".delete-trigger").onclick = (e) => {
+      e.stopPropagation(); 
+      deleteEntry(item.id);
+    };
     list.appendChild(el);
   });
 
@@ -204,21 +286,17 @@ function updateStats(dayLog) {
     f: acc.f + x.fat
   }), { cal: 0, p: 0, c: 0, f: 0 });
 
-  // Update Donut Chart
   const totalGrams = totals.p + totals.c + totals.f;
   const pPct = totalGrams ? (totals.p / totalGrams) * 100 : 0;
   const cPct = totalGrams ? (totals.c / totalGrams) * 100 : 0;
   const fPct = totalGrams ? (totals.f / totalGrams) * 100 : 0;
-
-  // CSS Conic Gradient logic
-  const fStart = pPct + cPct;
   
   const chart = $("macroDonut");
   if (totalGrams > 0) {
     chart.style.background = `conic-gradient(
       var(--accent-p) 0% ${pPct}%,
-      var(--accent-c) ${pPct}% ${fStart}%,
-      var(--accent-f) ${fStart}% 100%
+      var(--accent-c) ${pPct}% ${pPct + cPct}%,
+      var(--accent-f) ${pPct + cPct}% 100%
     )`;
   } else {
     chart.style.background = "var(--border)";
@@ -229,7 +307,6 @@ function updateStats(dayLog) {
   $("dispC").textContent = `${Math.round(totals.c)}g`;
   $("dispF").textContent = `${Math.round(totals.f)}g`;
 
-  // Update Bars
   const setBar = (id, remId, val, target, unit="") => {
     const pct = Math.min((val / target) * 100, 100);
     const rem = target - val;
@@ -244,11 +321,12 @@ function updateStats(dayLog) {
   setBar("barFat", "remFat", totals.f, state.targets.fat, "g");
 }
 
+// ---- DROPDOWN & INPUTS ----
+
 function buildDropdown(filter = "") {
   const sel = $("mealDropdown");
   sel.innerHTML = "";
   const term = filter.toLowerCase();
-
   const all = { ...state.mealsFromFile, ...state.manualMeals };
   const matches = Object.keys(all).filter(k => k.toLowerCase().includes(term)).sort();
 
@@ -264,14 +342,18 @@ function buildDropdown(filter = "") {
     opt.textContent = "No matches found";
     opt.disabled = true;
     sel.appendChild(opt);
-  } else {
-      sel.selectedIndex = 0;
-  }
+  } else sel.selectedIndex = 0;
 }
 
-// ---- MODAL ----
-let editingId = null;
+function updateTargetInputs() {
+  $("targetCalories").value = state.targets.calories;
+  $("targetProtein").value = state.targets.protein;
+  $("targetCarbs").value = state.targets.carbs;
+  $("targetFat").value = state.targets.fat;
+}
 
+// ---- EDIT MODAL ----
+let editingId = null;
 function openEditModal(item) {
   editingId = item.id;
   $("editName").value = item.name;
@@ -283,11 +365,10 @@ function openEditModal(item) {
   $("editModal").showModal();
 }
 
-$("saveEditBtn").addEventListener("click", () => {
+$("saveEditBtn").onclick = async () => {
   if (!editingId) return;
   const newSrv = num($("editServings").value);
-  
-  updateEntry(editingId, {
+  await updateEntryInDB(editingId, {
     name: $("editName").value,
     servings: newSrv,
     calories: num($("editCalories").value),
@@ -296,117 +377,93 @@ $("saveEditBtn").addEventListener("click", () => {
     fat: num($("editF").value)
   });
   $("editModal").close();
-});
+};
 
 $("closeEditBtn").onclick = () => $("editModal").close();
 
-// ---- INITIALIZATION & EVENTS ----
+
+// ---- INIT ----
 
 async function init() {
-  loadData();
-  
-  // Load JSON
+  // Check System Theme
+  const savedTheme = localStorage.getItem("mt_theme"); 
+  if(savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
+
+  // Load JSON file
   try {
     const res = await fetch("meals.json");
     state.mealsFromFile = await res.json();
-  } catch (e) { console.warn("No meals.json found"); }
+  } catch (e) { console.warn("meals.json not found"); }
 
-  // Init UI
-  buildDropdown();
-  render();
-  renderRecents();
+  // Listen for Auth Changes
+  onAuthStateChanged(auth, (user) => updateAuthUI(user));
+
+  // Event Listeners
+  $("mealSearch").addEventListener("input", (e) => buildDropdown(e.target.value));
+  $("addMealBtn").onclick = () => {
+    const name = $("mealDropdown").value;
+    const all = { ...state.mealsFromFile, ...state.manualMeals };
+    if (all[name]) addEntry(name, all[name], "db", $("mealServings").value);
+  };
+  
+  $("addManualBtn").onclick = () => {
+    const macros = {
+      calories: $("manualCalories").value, protein: $("manualProtein").value,
+      carbs: $("manualCarbs").value, fat: $("manualFat").value
+    };
+    addEntry($("manualName").value || "Manual", macros, "manual", $("manualServings").value);
+  };
+
+  $("addSaveManualBtn").onclick = async () => {
+    const name = $("manualName").value.trim();
+    if (!name) return toast("Name required");
+    const macros = {
+      calories: num($("manualCalories").value), protein: num($("manualProtein").value),
+      carbs: num($("manualCarbs").value), fat: num($("manualFat").value)
+    };
+    // Update local state temporarily for speed, then sync
+    state.manualMeals[name] = macros; 
+    await saveManualMeals();
+    await addEntry(name, macros, "manual", $("manualServings").value);
+    buildDropdown($("mealSearch").value);
+  };
+
+  $("prevDateBtn").onclick = () => { state.currentDate.setDate(state.currentDate.getDate() - 1); render(); };
+  $("nextDateBtn").onclick = () => { state.currentDate.setDate(state.currentDate.getDate() + 1); render(); };
+
+  $("themeToggle").onclick = () => {
+    const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("mt_theme", next);
+  };
+
+  // Auto-save targets on change (debounced slightly by nature of event)
+  ["targetCalories","targetProtein","targetCarbs","targetFat"].forEach(id => {
+    $(id).addEventListener("change", () => {
+      state.targets[id.replace("target","").toLowerCase()] = num($(id).value);
+      render();
+      saveTargets();
+    });
+  });
 
   // Tabs
   document.querySelectorAll(".tab-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
+    btn.onclick = () => {
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
       document.querySelectorAll(".tab-content").forEach(c => c.classList.add("hidden"));
       btn.classList.add("active");
       $(`tab-${btn.dataset.tab}`).classList.remove("hidden");
-    });
-  });
-
-  // Events
-  $("mealSearch").addEventListener("input", (e) => buildDropdown(e.target.value));
-  
-  $("addMealBtn").addEventListener("click", () => {
-    const name = $("mealDropdown").value;
-    const srv = $("mealServings").value;
-    const all = { ...state.mealsFromFile, ...state.manualMeals };
-    if (all[name]) addEntry(name, all[name], "db", srv);
-  });
-
-  // Standard Add Manual
-  $("addManualBtn").addEventListener("click", () => {
-      const macros = {
-          calories: $("manualCalories").value, protein: $("manualProtein").value,
-          carbs: $("manualCarbs").value, fat: $("manualFat").value
-      };
-      addEntry($("manualName").value || "Manual Meal", macros, "manual", $("manualServings").value);
-  });
-
-  // FIXED: Add & Save Manual
-  $("addSaveManualBtn").addEventListener("click", () => {
-    const name = $("manualName").value.trim();
-    if (!name) return toast("Name required to save");
-    
-    const macros = {
-        calories: num($("manualCalories").value),
-        protein: num($("manualProtein").value),
-        carbs: num($("manualCarbs").value),
-        fat: num($("manualFat").value)
     };
-
-    // 1. Save to library state & persistence
-    state.manualMeals[name] = macros;
-    saveData();
-    
-    // 2. Add to daily log
-    addEntry(name, macros, "manual", $("manualServings").value);
-    
-    // 3. Update dropdown immediately so it appears in Search
-    buildDropdown($("mealSearch").value);
-    
-    toast(`Saved & Added: ${name}`);
   });
-  
-  $("prevDateBtn").onclick = () => changeDate(-1);
-  $("nextDateBtn").onclick = () => changeDate(1);
-  $("themeToggle").onclick = () => {
-      const cur = document.documentElement.getAttribute("data-theme");
-      const next = cur === "dark" ? "light" : "dark";
-      document.documentElement.setAttribute("data-theme", next);
-      localStorage.setItem(STORAGE.THEME, next);
-  };
-  
-  $("clearDayBtn").onclick = () => {
-      if(confirm("Clear this day?")) {
-          const d = toISODate(state.currentDate);
-          state.log = state.log.filter(x => x.date !== d);
-          saveData();
-          render();
-      }
-  };
-  
-  // Target inputs
-  ["targetCalories","targetProtein","targetCarbs","targetFat"].forEach(id => {
-      $(id).addEventListener("input", () => {
-          state.targets[id.replace("target","").toLowerCase()] = num($(id).value);
-          saveData();
-          render();
-      });
-  });
-}
 
-function changeDate(delta) {
-    state.currentDate.setDate(state.currentDate.getDate() + delta);
-    render();
+  render();
 }
 
 function render() {
-    updateDateDisplay();
-    renderLog();
-    if(!$("tab-recent").classList.contains("hidden")) renderRecents();
+  updateDateDisplay();
+  buildDropdown($("mealSearch").value);
+  renderLog();
+  if(!$("tab-recent").classList.contains("hidden")) renderRecents();
 }
 
 document.addEventListener("DOMContentLoaded", init);
