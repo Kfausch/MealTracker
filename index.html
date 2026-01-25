@@ -3,25 +3,42 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Meal Tracker Pro</title>
-  <meta name="description" content="Professional macro tracker with history and analytics." />
+  <title>Meal Tracker Pro (Cloud)</title>
+  <meta name="description" content="Professional macro tracker with cloud sync." />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="container">
+  <div id="authOverlay" class="auth-overlay">
+    <div class="auth-box">
+      <div class="logo-large"></div>
+      <h2>Welcome Back</h2>
+      <div class="sub">Sign in to sync your data across devices.</div>
+      
+      <form id="authForm" class="auth-form">
+        <input type="email" id="authEmail" placeholder="Email address" required />
+        <input type="password" id="authPass" placeholder="Password" required />
+        <div id="authError" class="error-msg"></div>
+        
+        <button type="submit" class="btn btn-primary full-width" id="btnLogin">Log In</button>
+        <button type="button" class="btn full-width" id="btnSignup">Create Account</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="container blurred" id="appContainer">
     <header>
       <div class="brand">
         <div class="logo" aria-hidden="true"></div>
         <div>
           <h1>Meal Tracker</h1>
-          <div class="sub">Daily Macro & Calorie Log</div>
+          <div class="sub">Cloud Sync Enabled</div>
         </div>
       </div>
 
       <div class="top-actions">
-        <button class="btn btn-ghost" id="themeToggle" type="button">
-          Theme
-        </button>
+        <span id="userEmailDisplay" class="badge"></span>
+        <button class="btn btn-ghost" id="btnLogout" type="button">Log Out</button>
+        <button class="btn btn-ghost" id="themeToggle" type="button">Theme</button>
       </div>
     </header>
 
@@ -36,7 +53,6 @@
 
     <main class="grid grid-2">
       <section class="grid">
-        
         <div class="card p-0">
           <div class="tabs">
             <button class="tab-btn active" data-tab="search">Search</button>
@@ -103,7 +119,7 @@
         <div class="card">
           <div class="card-header">
             <h2>Daily Log</h2>
-            <button class="btn-xs" id="clearDayBtn" type="button">Clear All</button>
+            <div class="loader" id="logLoader" style="display:none;">Syncing...</div>
           </div>
           <hr class="sep" />
           <div id="selectedMeals" class="log-list"></div>
@@ -112,7 +128,6 @@
       </section>
 
       <section class="grid">
-        
         <div class="card">
           <h2>Nutrition Summary</h2>
           <div class="macro-dashboard">
@@ -125,26 +140,12 @@
               </div>
             </div>
             <div class="legend">
-              <div class="legend-item">
-                <span class="dot p-dot"></span> 
-                <span class="l-label">Protein</span>
-                <span class="l-val" id="dispP">0g</span>
-              </div>
-              <div class="legend-item">
-                <span class="dot c-dot"></span> 
-                <span class="l-label">Carbs</span>
-                <span class="l-val" id="dispC">0g</span>
-              </div>
-              <div class="legend-item">
-                <span class="dot f-dot"></span> 
-                <span class="l-label">Fat</span>
-                <span class="l-val" id="dispF">0g</span>
-              </div>
+              <div class="legend-item"><span class="dot p-dot"></span> <span class="l-label">Protein</span> <span class="l-val" id="dispP">0g</span></div>
+              <div class="legend-item"><span class="dot c-dot"></span> <span class="l-label">Carbs</span> <span class="l-val" id="dispC">0g</span></div>
+              <div class="legend-item"><span class="dot f-dot"></span> <span class="l-label">Fat</span> <span class="l-val" id="dispF">0g</span></div>
             </div>
           </div>
-          
           <hr class="sep" />
-          
           <div class="mini-bars">
             <div class="mini-stat">
               <div class="ms-label">Calories</div>
@@ -171,9 +172,10 @@
 
         <div class="card collapsed-section">
           <details>
-            <summary>Targets & Data</summary>
+            <summary>Targets</summary>
             <div class="details-content">
               <h3>Daily Targets</h3>
+              <div class="muted" style="margin-bottom:10px;">Changes auto-save to cloud.</div>
               <div class="form">
                 <div class="form-row cols-2">
                   <div><label>Calories</label><input id="targetCalories" type="number" /></div>
@@ -182,22 +184,14 @@
                   <div><label>Fat</label><input id="targetFat" type="number" /></div>
                 </div>
               </div>
-              <hr class="sep" />
-              <h3>Data Management</h3>
-              <div class="row-inline">
-                <button class="btn" id="exportLogBtn">Export All Data</button>
-                <button class="btn" id="importLogBtn">Import Data</button>
-                <input id="importLogFile" type="file" accept=".json" hidden />
-              </div>
             </div>
           </details>
         </div>
-
       </section>
     </main>
 
     <footer>
-      Meal Tracker Pro • Data stored on-device (localStorage).
+      Meal Tracker Pro • Data Synced via Firebase
     </footer>
   </div>
 
@@ -225,6 +219,7 @@
   </dialog>
 
   <div id="toast" class="toast" role="status"></div>
-  <script src="app.js"></script>
+
+  <script type="module" src="app.js"></script>
 </body>
 </html>
