@@ -4,14 +4,14 @@ import {
   getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { 
-  getFirestore, collection, doc, setDoc, addDoc, updateDoc, deleteDoc, 
+  getFirestore, collection, doc, setDoc, addDoc, updateDoc, deleteDoc, writeBatch,
   query, where, orderBy, onSnapshot, getDoc 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- CONFIGURATION ---
-// TODO: PASTE YOUR FIREBASE CONFIG HERE
+// PASTE YOUR FIREBASE CONFIG HERE (Use the one from your screenshot)
 const firebaseConfig = {
-  apiKey: "AIzaSyCBTp6Mcg_dSgmlJXmQOddYVgBZTeiFxJc",
+  apiKey: "AIzaSyCBTp6Mcg_dSgmIJXmQOddYVgBZTeiFxJc",
   authDomain: "meal-tracker-1485f.firebaseapp.com",
   projectId: "meal-tracker-1485f",
   storageBucket: "meal-tracker-1485f.firebasestorage.app",
@@ -27,13 +27,13 @@ const db = getFirestore(app);
 
 // STATE
 let state = {
-  user: null, // Logged in user
+  user: null, 
   currentDate: new Date(),
   log: [],          
-  manualMeals: {},  
-  mealsFromFile: {},
+  library: [], // Unified list of foods from DB
   targets: { calories: 1800, protein: 180, carbs: 200, fat: 65 },
-  unsubscribeLog: null // To stop listening when logging out
+  unsubscribeLog: null,
+  unsubscribeLib: null
 };
 
 // DOM Elements
@@ -64,8 +64,9 @@ function updateAuthUI(user) {
     $("userEmailDisplay").textContent = "";
     // Clear data
     state.log = [];
-    state.manualMeals = {};
+    state.library = [];
     if (state.unsubscribeLog) state.unsubscribeLog();
+    if (state.unsubscribeLib) state.unsubscribeLib();
   }
 }
 
@@ -97,7 +98,7 @@ $("btnLogout").addEventListener("click", () => signOut(auth));
 // ---- DATABASE SYNC ----
 
 async function initUserData(uid) {
-  // 1. Load User Settings (Targets)
+  // 1. Load User Targets
   const settingsRef = doc(db, "users", uid, "data", "settings");
   try {
     const snap = await getDoc(settingsRef);
@@ -107,50 +108,85 @@ async function initUserData(uid) {
     updateTargetInputs();
   } catch(e) { console.error(e); }
 
-  // 2. Load Manual Meals (Saved items)
-  const manualRef = doc(db, "users", uid, "data", "manual_meals");
-  try {
-    const snap = await getDoc(manualRef);
-    if (snap.exists()) {
-      state.manualMeals = snap.data();
-    }
-    buildDropdown(); // Refresh dropdown with saved meals
-  } catch(e) { console.error(e); }
+  // 2. Realtime Listener for FOOD LIBRARY (The "Meals")
+  const libRef = collection(db, "users", uid, "meals");
+  const qLib = query(libRef, orderBy("name"));
+  
+  state.unsubscribeLib = onSnapshot(qLib, (snapshot) => {
+    state.library = [];
+    snapshot.forEach((doc) => {
+      state.library.push({ id: doc.id, ...doc.data() });
+    });
+    buildDropdown($("mealSearch").value);
+  });
 
-  // 3. Realtime Listener for Daily Logs
+  // 3. Realtime Listener for DAILY LOGS
   const logRef = collection(db, "users", uid, "logs");
-  // We grab ALL history for analytics, but we could limit this for performance later
-  const q = query(logRef, orderBy("createdAt", "desc"));
+  const qLog = query(logRef, orderBy("createdAt", "desc"));
   
   $("logLoader").style.display = "block";
-  
-  state.unsubscribeLog = onSnapshot(q, (snapshot) => {
+  state.unsubscribeLog = onSnapshot(qLog, (snapshot) => {
     state.log = [];
     snapshot.forEach((doc) => {
       state.log.push({ id: doc.id, ...doc.data() });
     });
     $("logLoader").style.display = "none";
-    render(); // Re-render whenever DB changes
+    render(); 
   });
 }
 
 // ---- LOGIC ----
 
-// Save Targets to DB
+// Save Targets
 async function saveTargets() {
   if (!state.user) return;
   const ref = doc(db, "users", state.user.uid, "data", "settings");
   await setDoc(ref, state.targets, { merge: true });
 }
 
-// Save Manual Meal Library to DB
-async function saveManualMeals() {
+// IMPORT DEFAULTS (Batch Write)
+async function importDefaults() {
   if (!state.user) return;
-  const ref = doc(db, "users", state.user.uid, "data", "manual_meals");
-  await setDoc(ref, state.manualMeals);
+  const btn = $("btnImportDefaults");
+  const status = $("importStatus");
+  btn.disabled = true;
+  status.textContent = "Loading JSON...";
+
+  try {
+    // Fetch local JSON file
+    const res = await fetch("meals.json");
+    const defaults = await res.json();
+    
+    status.textContent = "Uploading to Database...";
+    const batch = writeBatch(db);
+    const collectionRef = collection(db, "users", state.user.uid, "meals");
+
+    // Loop through JSON and queue writes
+    Object.entries(defaults).forEach(([name, macros]) => {
+      const newDoc = doc(collectionRef); // Generate auto-ID
+      batch.set(newDoc, {
+        name: name,
+        calories: num(macros.calories),
+        protein: num(macros.protein),
+        carbs: num(macros.carbs),
+        fat: num(macros.fat),
+        source: "default"
+      });
+    });
+
+    await batch.commit();
+    status.textContent = "Success! Default meals added.";
+    toast(`Imported ${Object.keys(defaults).length} meals`);
+    
+  } catch (e) {
+    console.error(e);
+    status.textContent = "Error importing: " + e.message;
+  } finally {
+    btn.disabled = false;
+  }
 }
 
-// Add Entry -> Writes to Firestore
+// Add Entry (To Day Log)
 async function addEntry(name, macros, source, servings = 1) {
   if (!state.user) return;
   const s = num(servings);
@@ -164,7 +200,7 @@ async function addEntry(name, macros, source, servings = 1) {
     protein: num(macros.protein) * s,
     carbs: num(macros.carbs) * s,
     fat: num(macros.fat) * s,
-    base: { ...macros } // Store base for editing
+    base: { ...macros } 
   };
   
   try {
@@ -172,26 +208,30 @@ async function addEntry(name, macros, source, servings = 1) {
     toast(`Added: ${name}`);
   } catch (e) {
     toast("Error adding entry");
-    console.error(e);
   }
 }
 
-// Update Entry -> Writes to Firestore
-async function updateEntryInDB(id, data) {
+// Save New Meal (To Library)
+async function saveToLibrary(name, macros) {
   if (!state.user) return;
-  const ref = doc(db, "users", state.user.uid, "logs", id);
-  await updateDoc(ref, data);
-  toast("Updated");
+  try {
+    await addDoc(collection(db, "users", state.user.uid, "meals"), {
+      name: name,
+      ...macros
+    });
+    toast(`Saved to Library: ${name}`);
+  } catch (e) {
+    toast("Error saving to library");
+  }
 }
 
-// Delete Entry -> Deletes from Firestore
 async function deleteEntry(id) {
   if (!state.user) return;
   if(!confirm("Remove this item?")) return;
   await deleteDoc(doc(db, "users", state.user.uid, "logs", id));
 }
 
-// ---- UI RENDERING (Similar to before, but simplified) ----
+// ---- UI RENDERING ----
 
 function getDayLog() {
   const dateStr = toISODate(state.currentDate);
@@ -243,7 +283,6 @@ function renderLog() {
     const el = document.createElement("div");
     el.className = "log-item";
     
-    // PPC Calc
     const cal = num(item.calories);
     const pro = num(item.protein);
     let ppc = cal > 0 ? (pro / cal).toFixed(2) : "0";
@@ -262,12 +301,10 @@ function renderLog() {
         </div>
       </div>
       <div style="display:flex; gap:10px;">
-        <button class="btn-ghost edit-trigger" style="font-size:1.2rem;">✎</button>
         <button class="btn-ghost delete-trigger" style="color:var(--danger);">✕</button>
       </div>
     `;
     
-    el.querySelector(".edit-trigger").onclick = () => openEditModal(item);
     el.querySelector(".delete-trigger").onclick = (e) => {
       e.stopPropagation(); 
       deleteEntry(item.id);
@@ -289,7 +326,6 @@ function updateStats(dayLog) {
   const totalGrams = totals.p + totals.c + totals.f;
   const pPct = totalGrams ? (totals.p / totalGrams) * 100 : 0;
   const cPct = totalGrams ? (totals.c / totalGrams) * 100 : 0;
-  const fPct = totalGrams ? (totals.f / totalGrams) * 100 : 0;
   
   const chart = $("macroDonut");
   if (totalGrams > 0) {
@@ -327,13 +363,14 @@ function buildDropdown(filter = "") {
   const sel = $("mealDropdown");
   sel.innerHTML = "";
   const term = filter.toLowerCase();
-  const all = { ...state.mealsFromFile, ...state.manualMeals };
-  const matches = Object.keys(all).filter(k => k.toLowerCase().includes(term)).sort();
+  
+  // FILTER THE LIBRARY FROM DB
+  const matches = state.library.filter(m => m.name.toLowerCase().includes(term));
 
-  matches.forEach(name => {
+  matches.forEach(item => {
     const opt = document.createElement("option");
-    opt.value = name;
-    opt.textContent = name;
+    opt.value = item.id; // Store ID as value for lookup
+    opt.textContent = item.name;
     sel.appendChild(opt);
   });
   
@@ -352,60 +389,24 @@ function updateTargetInputs() {
   $("targetFat").value = state.targets.fat;
 }
 
-// ---- EDIT MODAL ----
-let editingId = null;
-function openEditModal(item) {
-  editingId = item.id;
-  $("editName").value = item.name;
-  $("editServings").value = item.servings;
-  $("editCalories").value = Math.round(item.calories);
-  $("editP").value = item.protein;
-  $("editC").value = item.carbs;
-  $("editF").value = item.fat;
-  $("editModal").showModal();
-}
-
-$("saveEditBtn").onclick = async () => {
-  if (!editingId) return;
-  const newSrv = num($("editServings").value);
-  await updateEntryInDB(editingId, {
-    name: $("editName").value,
-    servings: newSrv,
-    calories: num($("editCalories").value),
-    protein: num($("editP").value),
-    carbs: num($("editC").value),
-    fat: num($("editF").value)
-  });
-  $("editModal").close();
-};
-
-$("closeEditBtn").onclick = () => $("editModal").close();
-
-
 // ---- INIT ----
 
 async function init() {
-  // Check System Theme
   const savedTheme = localStorage.getItem("mt_theme"); 
   if(savedTheme) document.documentElement.setAttribute("data-theme", savedTheme);
 
-  // Load JSON file
-  try {
-    const res = await fetch("meals.json");
-    state.mealsFromFile = await res.json();
-  } catch (e) { console.warn("meals.json not found"); }
-
-  // Listen for Auth Changes
   onAuthStateChanged(auth, (user) => updateAuthUI(user));
 
-  // Event Listeners
   $("mealSearch").addEventListener("input", (e) => buildDropdown(e.target.value));
+  
+  // ADD FROM LIBRARY
   $("addMealBtn").onclick = () => {
-    const name = $("mealDropdown").value;
-    const all = { ...state.mealsFromFile, ...state.manualMeals };
-    if (all[name]) addEntry(name, all[name], "db", $("mealServings").value);
+    const id = $("mealDropdown").value;
+    const item = state.library.find(x => x.id === id);
+    if (item) addEntry(item.name, item, "db", $("mealServings").value);
   };
   
+  // ADD MANUAL
   $("addManualBtn").onclick = () => {
     const macros = {
       calories: $("manualCalories").value, protein: $("manualProtein").value,
@@ -414,6 +415,7 @@ async function init() {
     addEntry($("manualName").value || "Manual", macros, "manual", $("manualServings").value);
   };
 
+  // SAVE MANUAL TO LIBRARY
   $("addSaveManualBtn").onclick = async () => {
     const name = $("manualName").value.trim();
     if (!name) return toast("Name required");
@@ -421,12 +423,12 @@ async function init() {
       calories: num($("manualCalories").value), protein: num($("manualProtein").value),
       carbs: num($("manualCarbs").value), fat: num($("manualFat").value)
     };
-    // Update local state temporarily for speed, then sync
-    state.manualMeals[name] = macros; 
-    await saveManualMeals();
+    
+    await saveToLibrary(name, macros);
     await addEntry(name, macros, "manual", $("manualServings").value);
-    buildDropdown($("mealSearch").value);
   };
+
+  $("btnImportDefaults").onclick = importDefaults;
 
   $("prevDateBtn").onclick = () => { state.currentDate.setDate(state.currentDate.getDate() - 1); render(); };
   $("nextDateBtn").onclick = () => { state.currentDate.setDate(state.currentDate.getDate() + 1); render(); };
@@ -437,7 +439,6 @@ async function init() {
     localStorage.setItem("mt_theme", next);
   };
 
-  // Auto-save targets on change (debounced slightly by nature of event)
   ["targetCalories","targetProtein","targetCarbs","targetFat"].forEach(id => {
     $(id).addEventListener("change", () => {
       state.targets[id.replace("target","").toLowerCase()] = num($(id).value);
@@ -446,7 +447,6 @@ async function init() {
     });
   });
 
-  // Tabs
   document.querySelectorAll(".tab-btn").forEach(btn => {
     btn.onclick = () => {
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
