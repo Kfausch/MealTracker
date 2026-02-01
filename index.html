@@ -36,141 +36,191 @@
       </div>
 
       <div class="top-actions">
+        <button class="btn btn-ghost" id="btnStats" type="button">Stats 📊</button>
         <button class="btn btn-ghost" id="btnSettings" type="button">Settings ⚙️</button>
         <button class="btn btn-ghost" id="themeToggle" type="button">Theme</button>
         <button class="btn btn-ghost" id="btnLogout" type="button">Log Out</button>
       </div>
     </header>
 
-    <div class="date-nav-container">
-      <button class="btn-icon-nav" id="prevDateBtn">←</button>
-      <div class="date-display">
-        <span id="dateLabel" class="date-label">Today</span>
-        <span id="dateSub" class="date-sub">...</span>
+    <div id="trackerLayout">
+      <div class="date-nav-container">
+        <button class="btn-icon-nav" id="prevDateBtn">←</button>
+        <div class="date-display">
+          <span id="dateLabel" class="date-label">Today</span>
+          <span id="dateSub" class="date-sub">...</span>
+        </div>
+        <button class="btn-icon-nav" id="nextDateBtn">→</button>
       </div>
-      <button class="btn-icon-nav" id="nextDateBtn">→</button>
-    </div>
 
-    <main class="grid grid-2">
-      <section class="grid">
-        <div class="card p-0">
-          <div class="tabs">
-            <button class="tab-btn active" data-tab="search">Search</button>
-            <button class="tab-btn" data-tab="recent">Recent</button>
-            <button class="tab-btn" data-tab="manual">Manual</button>
-          </div>
+      <main class="grid grid-2">
+        <section class="grid">
+          <div class="card p-0">
+            <div class="tabs">
+              <button class="tab-btn active" data-tab="search">Search</button>
+              <button class="tab-btn" data-tab="recent">Recent</button>
+              <button class="tab-btn" data-tab="manual">Manual</button>
+            </div>
 
-          <div class="tab-content" id="tab-search">
-            <div class="form">
-              <div class="form-row cols-3-flex">
-                <div style="flex:2;">
-                  <label for="mealSearch">Filter meals</label>
-                  <input id="mealSearch" type="search" placeholder="Type to filter..." autocomplete="off" />
+            <div class="tab-content" id="tab-search">
+              <div class="form">
+                <div class="form-row cols-3-flex">
+                  <div style="flex:2;">
+                    <label for="mealSearch">Filter meals</label>
+                    <input id="mealSearch" type="search" placeholder="Type to filter..." autocomplete="off" />
+                  </div>
+                  <div style="flex:1;">
+                    <label for="mealServings">Servings</label>
+                    <input id="mealServings" type="number" min="0" step="0.25" value="1" />
+                  </div>
                 </div>
-                <div style="flex:1;">
-                  <label for="mealServings">Servings</label>
-                  <input id="mealServings" type="number" min="0" step="0.25" value="1" />
+                
+                <div>
+                  <label for="mealDropdown">Select Meal</label>
+                  <select id="mealDropdown" aria-label="Meal list" size="5" style="height: 120px;"></select>
+                </div>
+
+                <div class="row-inline right-align">
+                  <button class="btn btn-primary full-mobile" id="addMealBtn" type="button">Add Entry</button>
                 </div>
               </div>
-              
-              <div>
-                <label for="mealDropdown">Select Meal</label>
-                <select id="mealDropdown" aria-label="Meal list" size="5" style="height: 120px;"></select>
-              </div>
+            </div>
 
-              <div class="row-inline right-align">
-                <button class="btn btn-primary full-mobile" id="addMealBtn" type="button">Add Entry</button>
+            <div class="tab-content hidden" id="tab-recent">
+              <div class="muted" style="margin-bottom:10px;">Meals from your history (Synced across devices).</div>
+              <div id="recentList" class="recent-grid"></div>
+              <div id="noRecents" class="muted text-center" style="padding:20px;">No recent history yet.</div>
+            </div>
+
+            <div class="tab-content hidden" id="tab-manual">
+              <div class="form" id="manualForm">
+                <div class="form-row cols-2">
+                  <div>
+                    <label for="manualName">Name</label>
+                    <input id="manualName" type="text" placeholder="e.g. Latte" />
+                  </div>
+                  <div>
+                    <label for="manualServings">Servings</label>
+                    <input id="manualServings" type="number" min="0" step="0.25" value="1" />
+                  </div>
+                </div>
+                <div class="form-row cols-4">
+                  <div><label>Cal</label><input id="manualCalories" type="number" placeholder="0" /></div>
+                  <div><label>Prot</label><input id="manualProtein" type="number" placeholder="0" /></div>
+                  <div><label>Carb</label><input id="manualCarbs" type="number" placeholder="0" /></div>
+                  <div><label>Fat</label><input id="manualFat" type="number" placeholder="0" /></div>
+                </div>
+                <div class="row-inline">
+                  <button class="btn btn-secondary" id="addSaveManualBtn" type="button">Add & Save to Library</button>
+                  <button class="btn" id="addManualBtn" type="button">Add Log Only</button>
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="tab-content hidden" id="tab-recent">
-            <div class="muted" style="margin-bottom:10px;">Meals from your history (Synced across devices).</div>
-            <div id="recentList" class="recent-grid"></div>
-            <div id="noRecents" class="muted text-center" style="padding:20px;">No recent history yet.</div>
-          </div>
+          <div class="card">
+            <div class="card-header">
+              <h2>Daily Log</h2>
+              <div class="loader" id="logLoader" style="display:none;">Syncing...</div>
+            </div>
+            
+            <div class="metrics-bar">
+              <div class="metric-input">
+                <label>Weight</label>
+                <input id="dayWeight" type="number" step="0.1" placeholder="lbs/kg" />
+              </div>
+              <div class="metric-input">
+                <label>Steps</label>
+                <input id="daySteps" type="number" placeholder="Count" />
+              </div>
+              <button id="saveMetricsBtn" class="btn btn-xs btn-ghost">Save</button>
+            </div>
 
-          <div class="tab-content hidden" id="tab-manual">
-            <div class="form" id="manualForm">
-              <div class="form-row cols-2">
-                <div>
-                  <label for="manualName">Name</label>
-                  <input id="manualName" type="text" placeholder="e.g. Latte" />
-                </div>
-                <div>
-                  <label for="manualServings">Servings</label>
-                  <input id="manualServings" type="number" min="0" step="0.25" value="1" />
+            <hr class="sep" />
+            <div id="selectedMeals" class="log-list"></div>
+            <div id="emptyLog" class="muted text-center" style="padding: 20px;">Nothing logged for this day.</div>
+          </div>
+        </section>
+
+        <section class="grid">
+          <div class="card">
+            <h2>Nutrition Summary</h2>
+            <div class="macro-dashboard">
+              <div class="chart-container">
+                <div class="donut-chart" id="macroDonut">
+                  <div class="donut-hole">
+                    <div class="donut-val" id="calDisplay">0</div>
+                    <div class="donut-label">kCal</div>
+                  </div>
                 </div>
               </div>
-              <div class="form-row cols-4">
-                <div><label>Cal</label><input id="manualCalories" type="number" placeholder="0" /></div>
-                <div><label>Prot</label><input id="manualProtein" type="number" placeholder="0" /></div>
-                <div><label>Carb</label><input id="manualCarbs" type="number" placeholder="0" /></div>
-                <div><label>Fat</label><input id="manualFat" type="number" placeholder="0" /></div>
-              </div>
-              <div class="row-inline">
-                <button class="btn btn-secondary" id="addSaveManualBtn" type="button">Add & Save to Library</button>
-                <button class="btn" id="addManualBtn" type="button">Add Log Only</button>
+              <div class="legend">
+                <div class="legend-item"><span class="dot p-dot"></span> <span class="l-label">Protein</span> <span class="l-val" id="dispP">0g</span></div>
+                <div class="legend-item"><span class="dot c-dot"></span> <span class="l-label">Carbs</span> <span class="l-val" id="dispC">0g</span></div>
+                <div class="legend-item"><span class="dot f-dot"></span> <span class="l-label">Fat</span> <span class="l-val" id="dispF">0g</span></div>
               </div>
             </div>
+            <hr class="sep" />
+            <div class="mini-bars">
+              <div class="mini-stat">
+                <div class="ms-label">Calories</div>
+                <div class="ms-track"><div class="ms-fill" id="barCal"></div></div>
+                <div class="ms-rem" id="remCal">0 left</div>
+              </div>
+              <div class="mini-stat">
+                <div class="ms-label">Protein</div>
+                <div class="ms-track"><div class="ms-fill p-fill" id="barPro"></div></div>
+                <div class="ms-rem" id="remPro">0g left</div>
+              </div>
+              <div class="mini-stat">
+                <div class="ms-label">Carbs</div>
+                <div class="ms-track"><div class="ms-fill c-fill" id="barCarb"></div></div>
+                <div class="ms-rem" id="remCarb">0g left</div>
+              </div>
+              <div class="mini-stat">
+                <div class="ms-label">Fat</div>
+                <div class="ms-track"><div class="ms-fill f-fill" id="barFat"></div></div>
+                <div class="ms-rem" id="remFat">0g left</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div> <div id="statsView" class="hidden">
+      <div class="stats-header">
+        <button class="btn" id="closeStatsBtn">← Back to Tracker</button>
+        <h2>Analytics</h2>
+      </div>
+      
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-header">
+            <h3>Weekly Summary (Last 7 Days)</h3>
+          </div>
+          <div class="table-responsive">
+            <table class="stats-table" id="weeklyTable">
+              <thead><tr><th>Day</th><th>Cal</th><th>Pro</th><th>Carb</th><th>Fat</th><th>Wt</th><th>Steps</th></tr></thead>
+              <tbody></tbody>
+              <tfoot>
+                <tr id="weeklyAvgRow"><td>Avg</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+              </tfoot>
+            </table>
           </div>
         </div>
 
         <div class="card">
           <div class="card-header">
-            <h2>Daily Log</h2>
-             <div class="loader" id="logLoader" style="display:none;">Syncing...</div>
+            <h3>Monthly Overview</h3>
           </div>
-          <hr class="sep" />
-          <div id="selectedMeals" class="log-list"></div>
-          <div id="emptyLog" class="muted text-center" style="padding: 20px;">Nothing logged for this day.</div>
-        </div>
-      </section>
-
-      <section class="grid">
-        <div class="card">
-          <h2>Nutrition Summary</h2>
-          <div class="macro-dashboard">
-            <div class="chart-container">
-              <div class="donut-chart" id="macroDonut">
-                <div class="donut-hole">
-                  <div class="donut-val" id="calDisplay">0</div>
-                  <div class="donut-label">kCal</div>
-                </div>
-              </div>
-            </div>
-            <div class="legend">
-              <div class="legend-item"><span class="dot p-dot"></span> <span class="l-label">Protein</span> <span class="l-val" id="dispP">0g</span></div>
-              <div class="legend-item"><span class="dot c-dot"></span> <span class="l-label">Carbs</span> <span class="l-val" id="dispC">0g</span></div>
-              <div class="legend-item"><span class="dot f-dot"></span> <span class="l-label">Fat</span> <span class="l-val" id="dispF">0g</span></div>
-            </div>
-          </div>
-          <hr class="sep" />
-          <div class="mini-bars">
-            <div class="mini-stat">
-              <div class="ms-label">Calories</div>
-              <div class="ms-track"><div class="ms-fill" id="barCal"></div></div>
-              <div class="ms-rem" id="remCal">0 left</div>
-            </div>
-            <div class="mini-stat">
-              <div class="ms-label">Protein</div>
-              <div class="ms-track"><div class="ms-fill p-fill" id="barPro"></div></div>
-              <div class="ms-rem" id="remPro">0g left</div>
-            </div>
-            <div class="mini-stat">
-              <div class="ms-label">Carbs</div>
-              <div class="ms-track"><div class="ms-fill c-fill" id="barCarb"></div></div>
-              <div class="ms-rem" id="remCarb">0g left</div>
-            </div>
-            <div class="mini-stat">
-              <div class="ms-label">Fat</div>
-              <div class="ms-track"><div class="ms-fill f-fill" id="barFat"></div></div>
-              <div class="ms-rem" id="remFat">0g left</div>
-            </div>
+          <div class="table-responsive">
+            <table class="stats-table" id="monthlyTable">
+              <thead><tr><th>Week Starting</th><th>Avg Cal</th><th>Avg Pro</th><th>Avg Wt</th><th>Total Steps</th></tr></thead>
+              <tbody></tbody>
+            </table>
           </div>
         </div>
-      </section>
-    </main>
+      </div>
+    </div>
 
     <footer>
       Meal Tracker Pro • Data Synced via Firebase
@@ -184,6 +234,22 @@
         <button class="btn-ghost" id="closeSettingsBtn" style="font-size:1.5rem;">✕</button>
       </div>
       
+      <h3>Preferences</h3>
+      <div class="form">
+        <label>Time Zone Handling</label>
+        <select id="tzSelect">
+          <option value="local">Use Device Time (Auto)</option>
+          <option value="-5">Eastern Time (UTC-5)</option>
+          <option value="-6">Central Time (UTC-6)</option>
+          <option value="-7">Mountain Time (UTC-7)</option>
+          <option value="-8">Pacific Time (UTC-8)</option>
+          <option value="0">UTC</option>
+        </select>
+        <div class="muted">Controls when the "day" switches.</div>
+      </div>
+
+      <hr class="sep" />
+
       <h3>Daily Targets</h3>
       <div class="form">
         <div class="responsive-row">
@@ -198,15 +264,12 @@
       <hr class="sep" />
 
       <h3>Manage Food Library</h3>
-      <div class="muted">Edit or delete foods saved in your database.</div>
-      
       <div style="display:flex; gap:10px; margin:10px 0;">
         <input id="libSearch" type="search" placeholder="Search saved foods..." style="flex-grow:1;" />
         <button class="btn btn-primary btn-sm" id="btnAddLibItem">+ Add New</button>
       </div>
       
-      <div id="libraryList" class="library-list-container">
-        </div>
+      <div id="libraryList" class="library-list-container"></div>
 
       <hr class="sep" />
       <h3>Tools</h3>
