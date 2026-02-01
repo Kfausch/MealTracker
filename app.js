@@ -45,15 +45,12 @@ const fmt = (v) => Number.isFinite(v) ? Math.round(v * 10) / 10 : 0;
 // HELPER: Get Date String based on User Timezone Setting
 const getLocalDate = (d) => {
   const tz = state.targets.timezone || "local";
-  
   if (tz === "local") {
-    // Returns YYYY-MM-DD in local browser time
     const offset = d.getTimezoneOffset() * 60000;
     return new Date(d.getTime() - offset).toISOString().split('T')[0];
   } else {
-    // Manual offset (e.g. -6 for CST)
     const hourOffset = parseFloat(tz);
-    const utc = d.getTime() + (d.getTimezoneOffset() * 60000); // UTC time in ms
+    const utc = d.getTime() + (d.getTimezoneOffset() * 60000); 
     const targetTime = new Date(utc + (3600000 * hourOffset));
     return targetTime.toISOString().split('T')[0];
   }
@@ -77,7 +74,6 @@ function updateAuthUI(user) {
   } else {
     $("authOverlay").classList.remove("hidden");
     $("appContainer").classList.remove("active");
-    // Clear data
     state.log = [];
     state.library = [];
     state.days = {};
@@ -115,7 +111,6 @@ $("btnLogout").addEventListener("click", () => signOut(auth));
 // ---- DATABASE SYNC ----
 
 async function initUserData(uid) {
-  // 1. Load User Settings
   const settingsRef = doc(db, "users", uid, "data", "settings");
   try {
     const snap = await getDoc(settingsRef);
@@ -125,7 +120,6 @@ async function initUserData(uid) {
     updateTargetInputs();
   } catch(e) { console.error(e); }
 
-  // 2. Listener: FOOD LIBRARY
   const libRef = collection(db, "users", uid, "meals");
   const qLib = query(libRef, orderBy("name"));
   state.unsubscribeLib = onSnapshot(qLib, (snapshot) => {
@@ -135,7 +129,6 @@ async function initUserData(uid) {
     renderSettingsLibrary(); 
   });
 
-  // 3. Listener: DAILY LOGS (All history for Analytics)
   const logRef = collection(db, "users", uid, "logs");
   const qLog = query(logRef, orderBy("createdAt", "desc"));
   $("logLoader").style.display = "block";
@@ -146,20 +139,18 @@ async function initUserData(uid) {
     render(); 
   });
 
-  // 4. Listener: DAILY METRICS (Weight/Steps)
   const daysRef = collection(db, "users", uid, "days");
   state.unsubscribeDays = onSnapshot(daysRef, (snapshot) => {
     state.days = {};
     snapshot.forEach((doc) => {
       state.days[doc.id] = doc.data();
     });
-    renderMetrics(); // Update metrics UI for selected day
+    renderMetrics(); 
   });
 }
 
 // ---- LOGIC ----
 
-// Save Targets & Settings
 async function saveTargets() {
   if (!state.user) return;
   state.targets = {
@@ -167,16 +158,14 @@ async function saveTargets() {
     protein: num($("targetProtein").value),
     carbs: num($("targetCarbs").value),
     fat: num($("targetFat").value),
-    timezone: $("tzSelect").value // Save timezone
+    timezone: $("tzSelect").value 
   };
-  
   const ref = doc(db, "users", state.user.uid, "data", "settings");
   await setDoc(ref, state.targets, { merge: true });
   toast("Settings updated!");
   render(); 
 }
 
-// Save Daily Metrics (Weight/Steps)
 async function saveDayMetrics() {
   if (!state.user) return;
   const dateStr = getLocalDate(state.currentDate);
@@ -184,13 +173,11 @@ async function saveDayMetrics() {
     weight: num($("dayWeight").value),
     steps: num($("daySteps").value)
   };
-  
   const ref = doc(db, "users", state.user.uid, "days", dateStr);
   await setDoc(ref, data, { merge: true });
   toast("Metrics saved");
 }
 
-// Add Entry
 async function addEntry(name, macros, source, servings = 1) {
   if (!state.user) return;
   const s = num(servings);
@@ -206,22 +193,17 @@ async function addEntry(name, macros, source, servings = 1) {
     fat: num(macros.fat) * s,
     base: { ...macros } 
   };
-  
   try {
     await addDoc(collection(db, "users", state.user.uid, "logs"), entry);
     toast(`Added: ${name}`);
-    
-    // RESET UI INPUTS
     $("mealSearch").value = "";
     $("mealServings").value = "1";
-    buildDropdown(""); // Reset dropdown
-    
+    buildDropdown(""); 
   } catch (e) {
     toast("Error adding entry");
   }
 }
 
-// Save New Meal (To Library)
 async function saveToLibrary(name, macros) {
   if (!state.user) return;
   try {
@@ -230,7 +212,6 @@ async function saveToLibrary(name, macros) {
   } catch (e) { toast("Error saving to library"); }
 }
 
-// Update Existing Library Meal
 async function updateLibraryMeal(id, data) {
   if (!state.user) return;
   const ref = doc(db, "users", state.user.uid, "meals", id);
@@ -238,7 +219,6 @@ async function updateLibraryMeal(id, data) {
   toast("Meal updated in Library");
 }
 
-// Delete Library Meal
 async function deleteLibraryMeal(id) {
   if (!state.user) return;
   if(!confirm("Permanently delete this food from your database?")) return;
@@ -253,21 +233,18 @@ async function deleteEntry(id) {
   await deleteDoc(doc(db, "users", state.user.uid, "logs", id));
 }
 
-// IMPORT DEFAULTS
 async function importDefaults() {
   if (!state.user) return;
   const btn = $("btnImportDefaults");
   const status = $("importStatus");
   btn.disabled = true;
   status.textContent = "Loading JSON...";
-
   try {
     const res = await fetch("meals.json");
     const defaults = await res.json();
     status.textContent = "Uploading to Database...";
     const batch = writeBatch(db);
     const collectionRef = collection(db, "users", state.user.uid, "meals");
-
     Object.entries(defaults).forEach(([name, macros]) => {
       const newDoc = doc(collectionRef); 
       batch.set(newDoc, {
@@ -279,7 +256,6 @@ async function importDefaults() {
         source: "default"
       });
     });
-
     await batch.commit();
     status.textContent = "Success!";
     toast(`Imported ${Object.keys(defaults).length} meals`);
@@ -297,12 +273,10 @@ function getDayLog() {
 function updateDateDisplay() {
   const now = new Date();
   const d = state.currentDate;
-  // Compare using our timezone logic
   const dStr = getLocalDate(d);
   const todayStr = getLocalDate(now);
   const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
   const yestStr = getLocalDate(yesterday);
-  
   $("dateLabel").textContent = (dStr === todayStr) ? "Today" : (dStr === yestStr ? "Yesterday" : d.toLocaleDateString());
   $("dateSub").textContent = dStr;
 }
@@ -315,13 +289,11 @@ function renderRecents() {
     if (!map.has(item.name) && item.base) map.set(item.name, item.base);
   });
   const recents = Array.from(map.entries()).slice(0, 12);
-  
   if (recents.length === 0) {
     $("noRecents").classList.remove("hidden");
     return;
   }
   $("noRecents").classList.add("hidden");
-
   recents.forEach(([name, macros]) => {
     const el = document.createElement("div");
     el.className = "recent-item";
@@ -335,9 +307,7 @@ function renderLog() {
   const list = $("selectedMeals");
   list.innerHTML = "";
   const dayLog = getDayLog();
-
   $("emptyLog").style.display = dayLog.length ? "none" : "block";
-
   dayLog.forEach(item => {
     const el = document.createElement("div");
     el.className = "log-item";
@@ -346,7 +316,6 @@ function renderLog() {
     let ppc = cal > 0 ? (pro / cal).toFixed(2) : "0";
     if (ppc.endsWith('0')) ppc = ppc.slice(0, -1);
     if (ppc.endsWith('.')) ppc = ppc.slice(0, -1);
-
     el.innerHTML = `
       <div class="log-info">
         <h4>${item.name}</h4>
@@ -367,9 +336,8 @@ function renderLog() {
     };
     list.appendChild(el);
   });
-
   updateStats(dayLog);
-  renderMetrics(); // Update metric inputs for the selected day
+  renderMetrics(); 
 }
 
 function renderMetrics() {
@@ -386,23 +354,19 @@ function updateStats(dayLog) {
     c: acc.c + x.carbs,
     f: acc.f + x.fat
   }), { cal: 0, p: 0, c: 0, f: 0 });
-
   const totalGrams = totals.p + totals.c + totals.f;
   const pPct = totalGrams ? (totals.p / totalGrams) * 100 : 0;
   const cPct = totalGrams ? (totals.c / totalGrams) * 100 : 0;
-  
   const chart = $("macroDonut");
   if (totalGrams > 0) {
     chart.style.background = `conic-gradient(var(--accent-p) 0% ${pPct}%, var(--accent-c) ${pPct}% ${pPct + cPct}%, var(--accent-f) ${pPct + cPct}% 100%)`;
   } else {
     chart.style.background = "var(--border)";
   }
-
   $("calDisplay").textContent = Math.round(totals.cal);
   $("dispP").textContent = `${Math.round(totals.p)}g`;
   $("dispC").textContent = `${Math.round(totals.c)}g`;
   $("dispF").textContent = `${Math.round(totals.f)}g`;
-
   const setBar = (id, remId, val, target, unit="") => {
     const pct = Math.min((val / target) * 100, 100);
     const rem = target - val;
@@ -410,7 +374,6 @@ function updateStats(dayLog) {
     $(remId).textContent = rem >= 0 ? `${Math.round(rem)}${unit} left` : `${Math.round(Math.abs(rem))}${unit} over`;
     $(remId).style.color = rem < 0 ? "var(--danger)" : "var(--text-muted)";
   };
-
   setBar("barCal", "remCal", totals.cal, state.targets.calories);
   setBar("barPro", "remPro", totals.p, state.targets.protein, "g");
   setBar("barCarb", "remCarb", totals.c, state.targets.carbs, "g");
@@ -421,16 +384,13 @@ function buildDropdown(filter = "") {
   const sel = $("mealDropdown");
   sel.innerHTML = "";
   const term = filter.toLowerCase();
-  
   const matches = state.library.filter(m => m.name.toLowerCase().includes(term));
-
   matches.forEach(item => {
     const opt = document.createElement("option");
     opt.value = item.id; 
     opt.textContent = item.name;
     sel.appendChild(opt);
   });
-  
   if (!matches.length) {
     const opt = document.createElement("option");
     opt.textContent = "No matches found";
@@ -451,16 +411,13 @@ function renderSettingsLibrary() {
   const list = $("libraryList");
   list.innerHTML = "";
   const filter = ($("libSearch").value || "").toLowerCase();
-  
   const items = state.library
     .filter(i => i.name.toLowerCase().includes(filter))
     .sort((a,b) => a.name.localeCompare(b.name));
-
   if (items.length === 0) {
     list.innerHTML = '<div style="padding:10px; color:var(--text-muted); text-align:center;">No foods found.</div>';
     return;
   }
-
   items.forEach(item => {
     const div = document.createElement("div");
     div.className = "lib-item";
@@ -479,6 +436,9 @@ function renderSettingsLibrary() {
 // ---- ANALYTICS LOGIC ----
 
 function renderStats() {
+  // Helper to format numbers with commas
+  const fNum = (n) => n ? Math.round(n).toLocaleString() : "-";
+
   // 1. Weekly Stats (Last 7 Days)
   const weeklyTbody = $("weeklyTable").querySelector("tbody");
   weeklyTbody.innerHTML = "";
@@ -489,30 +449,26 @@ function renderStats() {
     const d = new Date(today); d.setDate(today.getDate() - i);
     const dateStr = getLocalDate(d);
     
-    // Get Logs for Day
     const logs = state.log.filter(l => l.date === dateStr);
     const dayTotals = logs.reduce((acc, x) => ({
       cal: acc.cal + x.calories, pro: acc.pro + x.protein, 
       carb: acc.carb + x.carbs, fat: acc.fat + x.fat
     }), { cal:0, pro:0, carb:0, fat:0 });
 
-    // Get Metrics
     const metrics = state.days[dateStr] || {};
     
-    // Row
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${d.toLocaleDateString(undefined, {weekday:'short', day:'numeric'})}</td>
-      <td>${Math.round(dayTotals.cal)}</td>
-      <td>${Math.round(dayTotals.pro)}</td>
-      <td>${Math.round(dayTotals.carb)}</td>
-      <td>${Math.round(dayTotals.fat)}</td>
+      <td>${fNum(dayTotals.cal)}</td>
+      <td>${fNum(dayTotals.pro)}</td>
+      <td>${fNum(dayTotals.carb)}</td>
+      <td>${fNum(dayTotals.fat)}</td>
       <td>${metrics.weight || "-"}</td>
-      <td>${metrics.steps || "-"}</td>
+      <td>${fNum(metrics.steps)}</td>
     `;
     weeklyTbody.appendChild(tr);
 
-    // Aggregates
     weeklyTotals.cal += dayTotals.cal;
     weeklyTotals.pro += dayTotals.pro;
     weeklyTotals.carb += dayTotals.carb;
@@ -522,21 +478,18 @@ function renderStats() {
     weeklyTotals.days++;
   }
 
-  // Weekly Averages Row
   const avgRow = $("weeklyAvgRow");
   avgRow.innerHTML = `
     <td>Avg/Tot</td>
-    <td>${Math.round(weeklyTotals.cal / 7)}</td>
-    <td>${Math.round(weeklyTotals.pro / 7)}</td>
-    <td>${Math.round(weeklyTotals.carb / 7)}</td>
-    <td>${Math.round(weeklyTotals.fat / 7)}</td>
+    <td>${fNum(weeklyTotals.cal / 7)}</td>
+    <td>${fNum(weeklyTotals.pro / 7)}</td>
+    <td>${fNum(weeklyTotals.carb / 7)}</td>
+    <td>${fNum(weeklyTotals.fat / 7)}</td>
     <td>${weeklyTotals.wtCount ? (weeklyTotals.wt / weeklyTotals.wtCount).toFixed(1) : "-"}</td>
-    <td>${weeklyTotals.steps.toLocaleString()}</td>
+    <td>${fNum(weeklyTotals.steps)}</td>
   `;
 
   // 2. Monthly Overview (By Week)
-  // Simplified: Group by ISO Week or just buckets of 7 days back from today?
-  // Let's do simple buckets of last 4 weeks.
   const monthlyTbody = $("monthlyTable").querySelector("tbody");
   monthlyTbody.innerHTML = "";
   
@@ -547,7 +500,7 @@ function renderStats() {
     for(let d=0; d<7; d++) {
       const dayOffset = (w * 7) + d;
       const dateObj = new Date(today); dateObj.setDate(today.getDate() - dayOffset);
-      if(d===6) startDate = dateObj; // Start of that week bucket
+      if(d===6) startDate = dateObj; 
       
       const dateStr = getLocalDate(dateObj);
       const logs = state.log.filter(l => l.date === dateStr);
@@ -562,10 +515,10 @@ function renderStats() {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${startDate ? startDate.toLocaleDateString() : 'Current'}</td>
-      <td>${Math.round(weekCal / 7)}</td>
-      <td>${Math.round(weekPro / 7)}</td>
+      <td>${fNum(weekCal / 7)}</td>
+      <td>${fNum(weekPro / 7)}</td>
       <td>${weekWtCnt ? (weekWt / weekWtCnt).toFixed(1) : "-"}</td>
-      <td>${weekSteps.toLocaleString()}</td>
+      <td>${fNum(weekSteps)}</td>
     `;
     monthlyTbody.appendChild(tr);
   }
@@ -644,16 +597,8 @@ async function init() {
     localStorage.setItem("mt_theme", next);
   };
   
-  // STATS TOGGLE
-  $("btnStats").onclick = () => {
-    renderStats();
-    $("trackerLayout").classList.add("hidden");
-    $("statsView").classList.remove("hidden");
-  };
-  $("closeStatsBtn").onclick = () => {
-    $("statsView").classList.add("hidden");
-    $("trackerLayout").classList.remove("hidden");
-  };
+  $("btnStats").onclick = () => { renderStats(); $("trackerLayout").classList.add("hidden"); $("statsView").classList.remove("hidden"); };
+  $("closeStatsBtn").onclick = () => { $("statsView").classList.add("hidden"); $("trackerLayout").classList.remove("hidden"); };
   
   $("btnSettings").onclick = () => { renderSettingsLibrary(); updateTargetInputs(); $("settingsModal").showModal(); };
   $("closeSettingsBtn").onclick = () => $("settingsModal").close();
