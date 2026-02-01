@@ -29,17 +29,35 @@ let state = {
   user: null, 
   currentDate: new Date(),
   log: [],          
-  library: [], // Unified list of foods from DB
-  targets: { calories: 1800, protein: 180, carbs: 200, fat: 65 },
+  library: [], 
+  days: {}, // Map of dateStr -> { weight, steps }
+  targets: { calories: 1800, protein: 180, carbs: 200, fat: 65, timezone: "local" },
   unsubscribeLog: null,
-  unsubscribeLib: null
+  unsubscribeLib: null,
+  unsubscribeDays: null
 };
 
 // DOM Elements
 const $ = (id) => document.getElementById(id);
 const num = (v) => parseFloat(v) || 0;
 const fmt = (v) => Number.isFinite(v) ? Math.round(v * 10) / 10 : 0;
-const toISODate = (d) => d.toISOString().split('T')[0];
+
+// HELPER: Get Date String based on User Timezone Setting
+const getLocalDate = (d) => {
+  const tz = state.targets.timezone || "local";
+  
+  if (tz === "local") {
+    // Returns YYYY-MM-DD in local browser time
+    const offset = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - offset).toISOString().split('T')[0];
+  } else {
+    // Manual offset (e.g. -6 for CST)
+    const hourOffset = parseFloat(tz);
+    const utc = d.getTime() + (d.getTimezoneOffset() * 60000); // UTC time in ms
+    const targetTime = new Date(utc + (3600000 * hourOffset));
+    return targetTime.toISOString().split('T')[0];
+  }
+};
 
 function toast(msg) {
   const t = $("toast");
@@ -62,8 +80,10 @@ function updateAuthUI(user) {
     // Clear data
     state.log = [];
     state.library = [];
+    state.days = {};
     if (state.unsubscribeLog) state.unsubscribeLog();
     if (state.unsubscribeLib) state.unsubscribeLib();
+    if (state.unsubscribeDays) state.unsubscribeDays();
   }
 }
 
@@ -95,7 +115,7 @@ $("btnLogout").addEventListener("click", () => signOut(auth));
 // ---- DATABASE SYNC ----
 
 async function initUserData(uid) {
-  // 1. Load User Targets
+  // 1. Load User Settings
   const settingsRef = doc(db, "users", uid, "data", "settings");
   try {
     const snap = await getDoc(settingsRef);
@@ -105,98 +125,77 @@ async function initUserData(uid) {
     updateTargetInputs();
   } catch(e) { console.error(e); }
 
-  // 2. Realtime Listener for FOOD LIBRARY (The "Meals")
+  // 2. Listener: FOOD LIBRARY
   const libRef = collection(db, "users", uid, "meals");
   const qLib = query(libRef, orderBy("name"));
-  
   state.unsubscribeLib = onSnapshot(qLib, (snapshot) => {
     state.library = [];
-    snapshot.forEach((doc) => {
-      state.library.push({ id: doc.id, ...doc.data() });
-    });
+    snapshot.forEach((doc) => state.library.push({ id: doc.id, ...doc.data() }));
     buildDropdown($("mealSearch").value);
-    renderSettingsLibrary(); // Update settings list if open
+    renderSettingsLibrary(); 
   });
 
-  // 3. Realtime Listener for DAILY LOGS
+  // 3. Listener: DAILY LOGS (All history for Analytics)
   const logRef = collection(db, "users", uid, "logs");
   const qLog = query(logRef, orderBy("createdAt", "desc"));
-  
   $("logLoader").style.display = "block";
   state.unsubscribeLog = onSnapshot(qLog, (snapshot) => {
     state.log = [];
-    snapshot.forEach((doc) => {
-      state.log.push({ id: doc.id, ...doc.data() });
-    });
+    snapshot.forEach((doc) => state.log.push({ id: doc.id, ...doc.data() }));
     $("logLoader").style.display = "none";
     render(); 
+  });
+
+  // 4. Listener: DAILY METRICS (Weight/Steps)
+  const daysRef = collection(db, "users", uid, "days");
+  state.unsubscribeDays = onSnapshot(daysRef, (snapshot) => {
+    state.days = {};
+    snapshot.forEach((doc) => {
+      state.days[doc.id] = doc.data();
+    });
+    renderMetrics(); // Update metrics UI for selected day
   });
 }
 
 // ---- LOGIC ----
 
-// Save Targets
+// Save Targets & Settings
 async function saveTargets() {
   if (!state.user) return;
   state.targets = {
     calories: num($("targetCalories").value),
     protein: num($("targetProtein").value),
     carbs: num($("targetCarbs").value),
-    fat: num($("targetFat").value)
+    fat: num($("targetFat").value),
+    timezone: $("tzSelect").value // Save timezone
   };
   
   const ref = doc(db, "users", state.user.uid, "data", "settings");
   await setDoc(ref, state.targets, { merge: true });
-  toast("Targets updated!");
+  toast("Settings updated!");
   render(); 
 }
 
-// IMPORT DEFAULTS (Batch Write)
-async function importDefaults() {
+// Save Daily Metrics (Weight/Steps)
+async function saveDayMetrics() {
   if (!state.user) return;
-  const btn = $("btnImportDefaults");
-  const status = $("importStatus");
-  btn.disabled = true;
-  status.textContent = "Loading JSON...";
-
-  try {
-    const res = await fetch("meals.json");
-    const defaults = await res.json();
-    
-    status.textContent = "Uploading to Database...";
-    const batch = writeBatch(db);
-    const collectionRef = collection(db, "users", state.user.uid, "meals");
-
-    Object.entries(defaults).forEach(([name, macros]) => {
-      const newDoc = doc(collectionRef); 
-      batch.set(newDoc, {
-        name: name,
-        calories: num(macros.calories),
-        protein: num(macros.protein),
-        carbs: num(macros.carbs),
-        fat: num(macros.fat),
-        source: "default"
-      });
-    });
-
-    await batch.commit();
-    status.textContent = "Success! Default meals added.";
-    toast(`Imported ${Object.keys(defaults).length} meals`);
-    
-  } catch (e) {
-    console.error(e);
-    status.textContent = "Error importing: " + e.message;
-  } finally {
-    btn.disabled = false;
-  }
+  const dateStr = getLocalDate(state.currentDate);
+  const data = {
+    weight: num($("dayWeight").value),
+    steps: num($("daySteps").value)
+  };
+  
+  const ref = doc(db, "users", state.user.uid, "days", dateStr);
+  await setDoc(ref, data, { merge: true });
+  toast("Metrics saved");
 }
 
-// Add Entry (To Day Log)
+// Add Entry
 async function addEntry(name, macros, source, servings = 1) {
   if (!state.user) return;
   const s = num(servings);
   const entry = {
-    date: toISODate(state.currentDate),
+    date: getLocalDate(state.currentDate),
     createdAt: Date.now(),
     name: name,
     source: source,
@@ -211,6 +210,12 @@ async function addEntry(name, macros, source, servings = 1) {
   try {
     await addDoc(collection(db, "users", state.user.uid, "logs"), entry);
     toast(`Added: ${name}`);
+    
+    // RESET UI INPUTS
+    $("mealSearch").value = "";
+    $("mealServings").value = "1";
+    buildDropdown(""); // Reset dropdown
+    
   } catch (e) {
     toast("Error adding entry");
   }
@@ -220,14 +225,9 @@ async function addEntry(name, macros, source, servings = 1) {
 async function saveToLibrary(name, macros) {
   if (!state.user) return;
   try {
-    await addDoc(collection(db, "users", state.user.uid, "meals"), {
-      name: name,
-      ...macros
-    });
+    await addDoc(collection(db, "users", state.user.uid, "meals"), { name, ...macros });
     toast(`Saved to Library: ${name}`);
-  } catch (e) {
-    toast("Error saving to library");
-  }
+  } catch (e) { toast("Error saving to library"); }
 }
 
 // Update Existing Library Meal
@@ -253,28 +253,64 @@ async function deleteEntry(id) {
   await deleteDoc(doc(db, "users", state.user.uid, "logs", id));
 }
 
+// IMPORT DEFAULTS
+async function importDefaults() {
+  if (!state.user) return;
+  const btn = $("btnImportDefaults");
+  const status = $("importStatus");
+  btn.disabled = true;
+  status.textContent = "Loading JSON...";
+
+  try {
+    const res = await fetch("meals.json");
+    const defaults = await res.json();
+    status.textContent = "Uploading to Database...";
+    const batch = writeBatch(db);
+    const collectionRef = collection(db, "users", state.user.uid, "meals");
+
+    Object.entries(defaults).forEach(([name, macros]) => {
+      const newDoc = doc(collectionRef); 
+      batch.set(newDoc, {
+        name: name,
+        calories: num(macros.calories),
+        protein: num(macros.protein),
+        carbs: num(macros.carbs),
+        fat: num(macros.fat),
+        source: "default"
+      });
+    });
+
+    await batch.commit();
+    status.textContent = "Success!";
+    toast(`Imported ${Object.keys(defaults).length} meals`);
+  } catch (e) { status.textContent = "Error: " + e.message; } 
+  finally { btn.disabled = false; }
+}
+
 // ---- UI RENDERING ----
 
 function getDayLog() {
-  const dateStr = toISODate(state.currentDate);
+  const dateStr = getLocalDate(state.currentDate);
   return state.log.filter(i => i.date === dateStr);
 }
 
 function updateDateDisplay() {
   const now = new Date();
   const d = state.currentDate;
-  const isToday = d.toDateString() === now.toDateString();
-  const isYesterday = new Date(now.setDate(now.getDate() - 1)).toDateString() === d.toDateString();
+  // Compare using our timezone logic
+  const dStr = getLocalDate(d);
+  const todayStr = getLocalDate(now);
+  const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+  const yestStr = getLocalDate(yesterday);
   
-  $("dateLabel").textContent = isToday ? "Today" : (isYesterday ? "Yesterday" : d.toLocaleDateString());
-  $("dateSub").textContent = toISODate(d);
+  $("dateLabel").textContent = (dStr === todayStr) ? "Today" : (dStr === yestStr ? "Yesterday" : d.toLocaleDateString());
+  $("dateSub").textContent = dStr;
 }
 
 function renderRecents() {
   const host = $("recentList");
   host.innerHTML = "";
   const map = new Map();
-  // Filter unique items from log
   state.log.forEach(item => {
     if (!map.has(item.name) && item.base) map.set(item.name, item.base);
   });
@@ -305,7 +341,6 @@ function renderLog() {
   dayLog.forEach(item => {
     const el = document.createElement("div");
     el.className = "log-item";
-    
     const cal = num(item.calories);
     const pro = num(item.protein);
     let ppc = cal > 0 ? (pro / cal).toFixed(2) : "0";
@@ -327,15 +362,21 @@ function renderLog() {
         <button class="btn-ghost delete-trigger" style="color:var(--danger);">✕</button>
       </div>
     `;
-    
     el.querySelector(".delete-trigger").onclick = (e) => {
-      e.stopPropagation(); 
-      deleteEntry(item.id);
+      e.stopPropagation(); deleteEntry(item.id);
     };
     list.appendChild(el);
   });
 
   updateStats(dayLog);
+  renderMetrics(); // Update metric inputs for the selected day
+}
+
+function renderMetrics() {
+  const dateStr = getLocalDate(state.currentDate);
+  const data = state.days[dateStr] || {};
+  $("dayWeight").value = data.weight || "";
+  $("daySteps").value = data.steps || "";
 }
 
 function updateStats(dayLog) {
@@ -352,11 +393,7 @@ function updateStats(dayLog) {
   
   const chart = $("macroDonut");
   if (totalGrams > 0) {
-    chart.style.background = `conic-gradient(
-      var(--accent-p) 0% ${pPct}%,
-      var(--accent-c) ${pPct}% ${pPct + cPct}%,
-      var(--accent-f) ${pPct + cPct}% 100%
-    )`;
+    chart.style.background = `conic-gradient(var(--accent-p) 0% ${pPct}%, var(--accent-c) ${pPct}% ${pPct + cPct}%, var(--accent-f) ${pPct + cPct}% 100%)`;
   } else {
     chart.style.background = "var(--border)";
   }
@@ -379,8 +416,6 @@ function updateStats(dayLog) {
   setBar("barCarb", "remCarb", totals.c, state.targets.carbs, "g");
   setBar("barFat", "remFat", totals.f, state.targets.fat, "g");
 }
-
-// ---- DROPDOWN & INPUTS ----
 
 function buildDropdown(filter = "") {
   const sel = $("mealDropdown");
@@ -409,14 +444,12 @@ function updateTargetInputs() {
   $("targetProtein").value = state.targets.protein;
   $("targetCarbs").value = state.targets.carbs;
   $("targetFat").value = state.targets.fat;
+  $("tzSelect").value = state.targets.timezone || "local";
 }
-
-// ---- SETTINGS & LIBRARY MANAGEMENT ----
 
 function renderSettingsLibrary() {
   const list = $("libraryList");
   list.innerHTML = "";
-  
   const filter = ($("libSearch").value || "").toLowerCase();
   
   const items = state.library
@@ -443,30 +476,115 @@ function renderSettingsLibrary() {
   });
 }
 
-// ---- EDIT LIBRARY MODAL ----
-let editingLibId = null;
+// ---- ANALYTICS LOGIC ----
 
+function renderStats() {
+  // 1. Weekly Stats (Last 7 Days)
+  const weeklyTbody = $("weeklyTable").querySelector("tbody");
+  weeklyTbody.innerHTML = "";
+  const today = new Date();
+  let weeklyTotals = { cal:0, pro:0, carb:0, fat:0, wt:0, steps:0, days:0 };
+  
+  for(let i=6; i>=0; i--) {
+    const d = new Date(today); d.setDate(today.getDate() - i);
+    const dateStr = getLocalDate(d);
+    
+    // Get Logs for Day
+    const logs = state.log.filter(l => l.date === dateStr);
+    const dayTotals = logs.reduce((acc, x) => ({
+      cal: acc.cal + x.calories, pro: acc.pro + x.protein, 
+      carb: acc.carb + x.carbs, fat: acc.fat + x.fat
+    }), { cal:0, pro:0, carb:0, fat:0 });
+
+    // Get Metrics
+    const metrics = state.days[dateStr] || {};
+    
+    // Row
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${d.toLocaleDateString(undefined, {weekday:'short', day:'numeric'})}</td>
+      <td>${Math.round(dayTotals.cal)}</td>
+      <td>${Math.round(dayTotals.pro)}</td>
+      <td>${Math.round(dayTotals.carb)}</td>
+      <td>${Math.round(dayTotals.fat)}</td>
+      <td>${metrics.weight || "-"}</td>
+      <td>${metrics.steps || "-"}</td>
+    `;
+    weeklyTbody.appendChild(tr);
+
+    // Aggregates
+    weeklyTotals.cal += dayTotals.cal;
+    weeklyTotals.pro += dayTotals.pro;
+    weeklyTotals.carb += dayTotals.carb;
+    weeklyTotals.fat += dayTotals.fat;
+    if(metrics.weight) { weeklyTotals.wt += metrics.weight; weeklyTotals.wtCount = (weeklyTotals.wtCount||0)+1; }
+    if(metrics.steps) weeklyTotals.steps += metrics.steps;
+    weeklyTotals.days++;
+  }
+
+  // Weekly Averages Row
+  const avgRow = $("weeklyAvgRow");
+  avgRow.innerHTML = `
+    <td>Avg/Tot</td>
+    <td>${Math.round(weeklyTotals.cal / 7)}</td>
+    <td>${Math.round(weeklyTotals.pro / 7)}</td>
+    <td>${Math.round(weeklyTotals.carb / 7)}</td>
+    <td>${Math.round(weeklyTotals.fat / 7)}</td>
+    <td>${weeklyTotals.wtCount ? (weeklyTotals.wt / weeklyTotals.wtCount).toFixed(1) : "-"}</td>
+    <td>${weeklyTotals.steps.toLocaleString()}</td>
+  `;
+
+  // 2. Monthly Overview (By Week)
+  // Simplified: Group by ISO Week or just buckets of 7 days back from today?
+  // Let's do simple buckets of last 4 weeks.
+  const monthlyTbody = $("monthlyTable").querySelector("tbody");
+  monthlyTbody.innerHTML = "";
+  
+  for(let w=0; w<4; w++) {
+    let weekCal=0, weekPro=0, weekWt=0, weekWtCnt=0, weekSteps=0;
+    let startDate;
+
+    for(let d=0; d<7; d++) {
+      const dayOffset = (w * 7) + d;
+      const dateObj = new Date(today); dateObj.setDate(today.getDate() - dayOffset);
+      if(d===6) startDate = dateObj; // Start of that week bucket
+      
+      const dateStr = getLocalDate(dateObj);
+      const logs = state.log.filter(l => l.date === dateStr);
+      weekCal += logs.reduce((sum, x) => sum + x.calories, 0);
+      weekPro += logs.reduce((sum, x) => sum + x.protein, 0);
+      
+      const met = state.days[dateStr] || {};
+      if(met.weight) { weekWt += met.weight; weekWtCnt++; }
+      if(met.steps) weekSteps += met.steps;
+    }
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${startDate ? startDate.toLocaleDateString() : 'Current'}</td>
+      <td>${Math.round(weekCal / 7)}</td>
+      <td>${Math.round(weekPro / 7)}</td>
+      <td>${weekWtCnt ? (weekWt / weekWtCnt).toFixed(1) : "-"}</td>
+      <td>${weekSteps.toLocaleString()}</td>
+    `;
+    monthlyTbody.appendChild(tr);
+  }
+}
+
+// ---- MODAL HANDLERS ----
+
+let editingLibId = null;
 function openEditLibModal(item) {
-  // If item is null, we are ADDING a new one
   if (!item) {
     editingLibId = null;
     $("libModalTitle").textContent = "Add New Food";
-    $("libName").value = "";
-    $("libCal").value = "";
-    $("libPro").value = "";
-    $("libCarb").value = "";
-    $("libFat").value = "";
-    $("deleteLibBtn").style.display = "none"; // Hide delete for new items
+    $("libName").value = ""; $("libCal").value = ""; $("libPro").value = ""; $("libCarb").value = ""; $("libFat").value = "";
+    $("deleteLibBtn").style.display = "none";
   } else {
-    // If item exists, we are EDITING
     editingLibId = item.id;
     $("libModalTitle").textContent = "Edit Saved Meal";
-    $("libName").value = item.name;
-    $("libCal").value = item.calories;
-    $("libPro").value = item.protein;
-    $("libCarb").value = item.carbs;
-    $("libFat").value = item.fat;
-    $("deleteLibBtn").style.display = "inline-block"; // Show delete
+    $("libName").value = item.name; $("libCal").value = item.calories; $("libPro").value = item.protein; $("libCarb").value = item.carbs; $("libFat").value = item.fat;
+    $("deleteLibBtn").style.display = "inline-block";
   }
   $("editLibModal").showModal();
 }
@@ -474,32 +592,14 @@ function openEditLibModal(item) {
 $("saveLibBtn").onclick = async () => {
   const name = $("libName").value.trim();
   if (!name) return toast("Name required");
-  
-  const macros = {
-    calories: num($("libCal").value),
-    protein: num($("libPro").value),
-    carbs: num($("libCarb").value),
-    fat: num($("libFat").value)
-  };
-
-  if(editingLibId) {
-    // Update existing
-    await updateLibraryMeal(editingLibId, { name, ...macros });
-  } else {
-    // Create new
-    await saveToLibrary(name, macros);
-  }
+  const macros = { calories: num($("libCal").value), protein: num($("libPro").value), carbs: num($("libCarb").value), fat: num($("libFat").value) };
+  if(editingLibId) await updateLibraryMeal(editingLibId, { name, ...macros });
+  else await saveToLibrary(name, macros);
   $("editLibModal").close();
 };
-
-$("deleteLibBtn").onclick = async () => {
-  if(!editingLibId) return;
-  await deleteLibraryMeal(editingLibId);
-  $("editLibModal").close();
-};
-
+$("deleteLibBtn").onclick = async () => { if(editingLibId) await deleteLibraryMeal(editingLibId); $("editLibModal").close(); };
 $("closeLibBtn").onclick = () => $("editLibModal").close();
-$("btnAddLibItem").onclick = () => openEditLibModal(null); // Open blank
+$("btnAddLibItem").onclick = () => openEditLibModal(null);
 
 
 // ---- INIT ----
@@ -512,34 +612,26 @@ async function init() {
 
   $("mealSearch").addEventListener("input", (e) => buildDropdown(e.target.value));
   
-  // ADD FROM LIBRARY
   $("addMealBtn").onclick = () => {
     const id = $("mealDropdown").value;
     const item = state.library.find(x => x.id === id);
     if (item) addEntry(item.name, item, "db", $("mealServings").value);
   };
   
-  // ADD MANUAL (LOG ONLY)
   $("addManualBtn").onclick = () => {
-    const macros = {
-      calories: $("manualCalories").value, protein: $("manualProtein").value,
-      carbs: $("manualCarbs").value, fat: $("manualFat").value
-    };
+    const macros = { calories: $("manualCalories").value, protein: $("manualProtein").value, carbs: $("manualCarbs").value, fat: $("manualFat").value };
     addEntry($("manualName").value || "Manual", macros, "manual", $("manualServings").value);
   };
 
-  // ADD MANUAL & SAVE
   $("addSaveManualBtn").onclick = async () => {
     const name = $("manualName").value.trim();
     if (!name) return toast("Name required");
-    const macros = {
-      calories: num($("manualCalories").value), protein: num($("manualProtein").value),
-      carbs: num($("manualCarbs").value), fat: num($("manualFat").value)
-    };
-    
+    const macros = { calories: num($("manualCalories").value), protein: num($("manualProtein").value), carbs: num($("manualCarbs").value), fat: num($("manualFat").value) };
     await saveToLibrary(name, macros);
     await addEntry(name, macros, "manual", $("manualServings").value);
   };
+
+  $("saveMetricsBtn").onclick = saveDayMetrics;
 
   $("btnImportDefaults").onclick = importDefaults;
 
@@ -552,12 +644,18 @@ async function init() {
     localStorage.setItem("mt_theme", next);
   };
   
-  // SETTINGS BUTTON
-  $("btnSettings").onclick = () => {
-    renderSettingsLibrary();
-    updateTargetInputs();
-    $("settingsModal").showModal();
+  // STATS TOGGLE
+  $("btnStats").onclick = () => {
+    renderStats();
+    $("trackerLayout").classList.add("hidden");
+    $("statsView").classList.remove("hidden");
   };
+  $("closeStatsBtn").onclick = () => {
+    $("statsView").classList.add("hidden");
+    $("trackerLayout").classList.remove("hidden");
+  };
+  
+  $("btnSettings").onclick = () => { renderSettingsLibrary(); updateTargetInputs(); $("settingsModal").showModal(); };
   $("closeSettingsBtn").onclick = () => $("settingsModal").close();
   $("saveTargetsBtn").onclick = saveTargets;
   $("libSearch").addEventListener("input", renderSettingsLibrary);
