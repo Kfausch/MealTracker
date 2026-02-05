@@ -3,296 +3,696 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Meal Tracker Pro (Cloud)</title>
+  <title>Meal Tracker Pro</title>
   <meta name="description" content="Professional macro tracker with cloud sync." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <!-- Auth Overlay -->
   <div id="authOverlay" class="auth-overlay">
     <div class="auth-box">
-      <div class="logo-large"></div>
+      <div class="logo-large">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+        </svg>
+      </div>
       <h2>Welcome Back</h2>
-      <div class="sub">Sign in to sync your data across devices.</div>
+      <p class="sub">Sign in to sync your nutrition data across all devices.</p>
       
       <form id="authForm" class="auth-form">
-        <input type="email" id="authEmail" placeholder="Email address" required />
-        <input type="password" id="authPass" placeholder="Password" required />
+        <div class="input-group">
+          <input type="email" id="authEmail" placeholder=" " required />
+          <label for="authEmail">Email address</label>
+        </div>
+        <div class="input-group">
+          <input type="password" id="authPass" placeholder=" " required />
+          <label for="authPass">Password</label>
+        </div>
         <div id="authError" class="error-msg"></div>
         
-        <button type="submit" class="btn btn-primary full-width" id="btnLogin">Log In</button>
-        <button type="button" class="btn full-width" id="btnSignup">Create Account</button>
+        <button type="submit" class="btn btn-primary full-width" id="btnLogin">
+          <span>Log In</span>
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </button>
+        <button type="button" class="btn btn-secondary full-width" id="btnSignup">Create Account</button>
       </form>
     </div>
   </div>
 
+  <!-- Main App Container -->
   <div class="container blurred" id="appContainer">
+    <!-- Header -->
     <header>
       <div class="brand">
-        <div class="logo" aria-hidden="true"></div>
+        <div class="logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
         <div>
           <h1>Meal Tracker</h1>
-          <div class="sub">Cloud Sync Enabled</div>
+          <div class="sub sync-status" id="syncStatus">
+            <span class="sync-dot"></span>
+            <span>Synced</span>
+          </div>
         </div>
       </div>
 
       <div class="top-actions">
-        <button class="btn btn-ghost" id="btnStats" type="button">Stats 📊</button>
-        <button class="btn btn-ghost" id="btnSettings" type="button">Settings ⚙️</button>
-        <button class="btn btn-ghost" id="themeToggle" type="button">Theme</button>
-        <button class="btn btn-ghost" id="btnLogout" type="button">Log Out</button>
+        <div class="streak-badge" id="streakBadge" title="Current logging streak">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+            <path d="M12 2c.55 0 1 .45 1 1v1c0 .55-.45 1-1 1s-1-.45-1-1V3c0-.55.45-1 1-1zm8.07 2.93c.39.39.39 1.02 0 1.41l-.71.71c-.39.39-1.02.39-1.41 0-.39-.39-.39-1.02 0-1.41l.71-.71c.39-.39 1.02-.39 1.41 0zM20 12c0 .55-.45 1-1 1h-1c-.55 0-1-.45-1-1s.45-1 1-1h1c.55 0 1 .45 1 1zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
+          </svg>
+          <span id="streakCount">0</span>
+          <span class="streak-label">days</span>
+        </div>
+        <button class="btn btn-ghost" id="btnStats" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <path d="M18 20V10M12 20V4M6 20v-6"/>
+          </svg>
+          <span>Stats</span>
+        </button>
+        <button class="btn btn-ghost" id="btnSettings" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+          </svg>
+          <span>Settings</span>
+        </button>
+        <button class="btn btn-ghost" id="themeToggle" type="button" title="Toggle theme">
+          <svg class="theme-icon-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <circle cx="12" cy="12" r="5"/>
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+          </svg>
+          <svg class="theme-icon-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+          </svg>
+        </button>
+        <button class="btn btn-ghost btn-logout" id="btnLogout" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+          </svg>
+        </button>
       </div>
     </header>
 
+    <!-- Main Tracker Layout -->
     <div id="trackerLayout">
+      <!-- Date Navigation -->
       <div class="date-nav-container">
-        <button class="btn-icon-nav" id="prevDateBtn">←</button>
+        <button class="btn-icon-nav" id="prevDateBtn" title="Previous day">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <path d="M15 18l-6-6 6-6"/>
+          </svg>
+        </button>
         <div class="date-display">
           <span id="dateLabel" class="date-label">Today</span>
           <span id="dateSub" class="date-sub">...</span>
         </div>
-        <button class="btn-icon-nav" id="nextDateBtn">→</button>
+        <button class="btn-icon-nav" id="nextDateBtn" title="Next day">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+        </button>
+        <button class="btn btn-sm btn-copy" id="copyPrevDayBtn" title="Copy meals from previous day">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+          </svg>
+          <span>Copy Yesterday</span>
+        </button>
       </div>
 
+      <!-- Main Grid -->
       <main class="grid grid-2">
+        <!-- Left Column: Input & Log -->
         <section class="grid">
+          <!-- Input Card with Tabs -->
           <div class="card p-0">
             <div class="tabs">
-              <button class="tab-btn active" data-tab="search">Search</button>
-              <button class="tab-btn" data-tab="recent">Recent</button>
-              <button class="tab-btn" data-tab="manual">Manual</button>
+              <button class="tab-btn active" data-tab="search">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                </svg>
+                Search
+              </button>
+              <button class="tab-btn" data-tab="recent">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                </svg>
+                Recent
+              </button>
+              <button class="tab-btn" data-tab="manual">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+                Manual
+              </button>
             </div>
 
+            <!-- Search Tab -->
             <div class="tab-content" id="tab-search">
               <div class="form">
-                <div class="form-row cols-3-flex">
-                  <div style="flex:2;">
-                    <label for="mealSearch">Filter meals</label>
-                    <input id="mealSearch" type="search" placeholder="Type to filter..." autocomplete="off" />
+                <div class="search-row">
+                  <div class="search-input-wrapper">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                    </svg>
+                    <input id="mealSearch" type="search" placeholder="Search your meal library..." autocomplete="off" />
+                    <span class="search-shortcut">⌘K</span>
                   </div>
-                  <div style="flex:1;">
-                    <label for="mealServings">Servings</label>
-                    <input id="mealServings" type="number" min="0" step="0.25" value="1" />
-                  </div>
-                </div>
-                
-                <div>
-                  <label for="mealDropdown">Select Meal</label>
-                  <select id="mealDropdown" aria-label="Meal list" size="5" style="height: 120px;"></select>
                 </div>
 
-                <div class="row-inline right-align">
-                  <button class="btn btn-primary full-mobile" id="addMealBtn" type="button">Add Entry</button>
+                <div class="meal-select-container">
+                  <select id="mealDropdown" aria-label="Meal list" size="6"></select>
+                  <div class="meal-preview" id="mealPreview">
+                    <div class="preview-name" id="previewName">Select a meal</div>
+                    <div class="preview-macros" id="previewMacros">
+                      <span class="macro-pill cal-pill">-- cal</span>
+                      <span class="macro-pill p-pill">P: --</span>
+                      <span class="macro-pill c-pill">C: --</span>
+                      <span class="macro-pill f-pill">F: --</span>
+                    </div>
+                  </div>
                 </div>
+
+                <div class="servings-row">
+                  <label>Servings</label>
+                  <div class="servings-controls">
+                    <button type="button" class="btn btn-sm btn-adjust" data-adjust="-0.25">−¼</button>
+                    <button type="button" class="btn btn-sm btn-adjust" data-adjust="-0.5">−½</button>
+                    <input id="mealServings" type="number" min="0" step="0.25" value="1" />
+                    <button type="button" class="btn btn-sm btn-adjust" data-adjust="0.5">+½</button>
+                    <button type="button" class="btn btn-sm btn-adjust" data-adjust="0.25">+¼</button>
+                  </div>
+                </div>
+
+                <button class="btn btn-primary btn-add-meal" id="addMealBtn" type="button">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                    <path d="M12 5v14M5 12h14"/>
+                  </svg>
+                  Add to Log
+                </button>
               </div>
             </div>
 
+            <!-- Recent Tab -->
             <div class="tab-content hidden" id="tab-recent">
-              <div class="muted" style="margin-bottom:10px;">Meals from your history (Synced across devices).</div>
+              <p class="muted">Quick-add from your recently logged meals.</p>
               <div id="recentList" class="recent-grid"></div>
-              <div id="noRecents" class="muted text-center" style="padding:20px;">No recent history yet.</div>
+              <div id="noRecents" class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+                  <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                </svg>
+                <p>No recent meals yet</p>
+                <span>Start logging to see your history here</span>
+              </div>
             </div>
 
+            <!-- Manual Tab -->
             <div class="tab-content hidden" id="tab-manual">
               <div class="form" id="manualForm">
                 <div class="form-row cols-2">
-                  <div>
+                  <div class="input-group-inline">
                     <label for="manualName">Name</label>
-                    <input id="manualName" type="text" placeholder="e.g. Latte" />
+                    <input id="manualName" type="text" placeholder="e.g. Grilled Chicken" />
                   </div>
-                  <div>
+                  <div class="input-group-inline">
                     <label for="manualServings">Servings</label>
                     <input id="manualServings" type="number" min="0" step="0.25" value="1" />
                   </div>
                 </div>
-                <div class="form-row cols-4">
-                  <div><label>Cal</label><input id="manualCalories" type="number" placeholder="0" /></div>
-                  <div><label>Prot</label><input id="manualProtein" type="number" placeholder="0" /></div>
-                  <div><label>Carb</label><input id="manualCarbs" type="number" placeholder="0" /></div>
-                  <div><label>Fat</label><input id="manualFat" type="number" placeholder="0" /></div>
+                <div class="form-row cols-4 macro-inputs">
+                  <div class="input-group-inline">
+                    <label>Cal</label>
+                    <input id="manualCalories" type="number" placeholder="0" />
+                  </div>
+                  <div class="input-group-inline">
+                    <label>Protein</label>
+                    <input id="manualProtein" type="number" placeholder="0" />
+                  </div>
+                  <div class="input-group-inline">
+                    <label>Carbs</label>
+                    <input id="manualCarbs" type="number" placeholder="0" />
+                  </div>
+                  <div class="input-group-inline">
+                    <label>Fat</label>
+                    <input id="manualFat" type="number" placeholder="0" />
+                  </div>
                 </div>
-                <div class="row-inline">
-                  <button class="btn btn-secondary" id="addSaveManualBtn" type="button">Add & Save to Library</button>
+                <div class="button-row">
+                  <button class="btn btn-secondary" id="addSaveManualBtn" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                      <polyline points="17,21 17,13 7,13 7,21"/>
+                      <polyline points="7,3 7,8 15,8"/>
+                    </svg>
+                    Add & Save to Library
+                  </button>
                   <button class="btn" id="addManualBtn" type="button">Add Log Only</button>
                 </div>
               </div>
             </div>
           </div>
 
+          <!-- Daily Log Card -->
           <div class="card">
             <div class="card-header">
-              <h2>Daily Log</h2>
-              <div class="loader" id="logLoader" style="display:none;">Syncing...</div>
+              <h2>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                  <polyline points="14,2 14,8 20,8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                  <polyline points="10,9 9,9 8,9"/>
+                </svg>
+                Daily Log
+              </h2>
+              <div class="loader" id="logLoader">
+                <div class="spinner"></div>
+                <span>Syncing...</span>
+              </div>
             </div>
             
+            <!-- Metrics Bar -->
             <div class="metrics-bar">
               <div class="metric-input">
-                <label>Weight</label>
-                <input id="dayWeight" type="number" step="0.1" placeholder="lbs/kg" />
+                <label>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <path d="M12 3v18M5 8h14a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1V9a1 1 0 011-1z"/>
+                  </svg>
+                  Weight
+                </label>
+                <input id="dayWeight" type="number" step="0.1" placeholder="lbs" />
               </div>
               <div class="metric-input">
-                <label>Steps</label>
-                <input id="daySteps" type="number" placeholder="Count" />
+                <label>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                    <path d="M4 19.5A2.5 2.5 0 016.5 17H20M4 4.5A2.5 2.5 0 016.5 7H20"/>
+                  </svg>
+                  Steps
+                </label>
+                <input id="daySteps" type="number" placeholder="0" />
               </div>
-              <button id="saveMetricsBtn" class="btn btn-xs btn-ghost">Save</button>
+              <button id="saveMetricsBtn" class="btn btn-xs">Save</button>
+            </div>
+
+            <!-- Daily Notes -->
+            <div class="notes-section">
+              <div class="notes-header" id="notesToggle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                <span>Daily Notes</span>
+                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </div>
+              <div class="notes-content hidden" id="notesContent">
+                <textarea id="dayNotes" placeholder="Add notes about your day, how you felt, etc..."></textarea>
+                <button id="saveNotesBtn" class="btn btn-xs">Save Note</button>
+              </div>
             </div>
 
             <hr class="sep" />
+            
             <div id="selectedMeals" class="log-list"></div>
-            <div id="emptyLog" class="muted text-center" style="padding: 20px;">Nothing logged for this day.</div>
+            <div id="emptyLog" class="empty-state small">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40">
+                <path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/>
+              </svg>
+              <p>Nothing logged yet</p>
+              <span>Add meals to start tracking</span>
+            </div>
           </div>
         </section>
 
+        <!-- Right Column: Nutrition Summary -->
         <section class="grid">
-          <div class="card">
-            <h2>Nutrition Summary</h2>
+          <div class="card summary-card">
+            <h2>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path d="M21.21 15.89A10 10 0 118 2.83M22 12A10 10 0 0012 2v10z"/>
+              </svg>
+              Nutrition Summary
+            </h2>
+            
             <div class="macro-dashboard">
               <div class="chart-container">
                 <div class="donut-chart" id="macroDonut">
                   <div class="donut-hole">
                     <div class="donut-val" id="calDisplay">0</div>
-                    <div class="donut-label">kCal</div>
+                    <div class="donut-label">kcal</div>
                   </div>
                 </div>
               </div>
               <div class="legend">
-                <div class="legend-item"><span class="dot p-dot"></span> <span class="l-label">Protein</span> <span class="l-val" id="dispP">0g</span></div>
-                <div class="legend-item"><span class="dot c-dot"></span> <span class="l-label">Carbs</span> <span class="l-val" id="dispC">0g</span></div>
-                <div class="legend-item"><span class="dot f-dot"></span> <span class="l-label">Fat</span> <span class="l-val" id="dispF">0g</span></div>
+                <div class="legend-item">
+                  <span class="dot p-dot"></span>
+                  <span class="l-label">Protein</span>
+                  <span class="l-val" id="dispP">0g</span>
+                </div>
+                <div class="legend-item">
+                  <span class="dot c-dot"></span>
+                  <span class="l-label">Carbs</span>
+                  <span class="l-val" id="dispC">0g</span>
+                </div>
+                <div class="legend-item">
+                  <span class="dot f-dot"></span>
+                  <span class="l-label">Fat</span>
+                  <span class="l-val" id="dispF">0g</span>
+                </div>
               </div>
             </div>
+            
             <hr class="sep" />
+            
             <div class="mini-bars">
               <div class="mini-stat">
-                <div class="ms-label">Calories</div>
+                <div class="ms-label">
+                  <span>Calories</span>
+                  <span class="ms-values"><span id="calCurrent">0</span> / <span id="calTarget">0</span></span>
+                </div>
                 <div class="ms-track"><div class="ms-fill" id="barCal"></div></div>
                 <div class="ms-rem" id="remCal">0 left</div>
               </div>
               <div class="mini-stat">
-                <div class="ms-label">Protein</div>
+                <div class="ms-label">
+                  <span>Protein</span>
+                  <span class="ms-values"><span id="proCurrent">0</span>g / <span id="proTarget">0</span>g</span>
+                </div>
                 <div class="ms-track"><div class="ms-fill p-fill" id="barPro"></div></div>
                 <div class="ms-rem" id="remPro">0g left</div>
               </div>
               <div class="mini-stat">
-                <div class="ms-label">Carbs</div>
+                <div class="ms-label">
+                  <span>Carbs</span>
+                  <span class="ms-values"><span id="carbCurrent">0</span>g / <span id="carbTarget">0</span>g</span>
+                </div>
                 <div class="ms-track"><div class="ms-fill c-fill" id="barCarb"></div></div>
                 <div class="ms-rem" id="remCarb">0g left</div>
               </div>
               <div class="mini-stat">
-                <div class="ms-label">Fat</div>
+                <div class="ms-label">
+                  <span>Fat</span>
+                  <span class="ms-values"><span id="fatCurrent">0</span>g / <span id="fatTarget">0</span>g</span>
+                </div>
                 <div class="ms-track"><div class="ms-fill f-fill" id="barFat"></div></div>
                 <div class="ms-rem" id="remFat">0g left</div>
+              </div>
+            </div>
+
+            <!-- Weekly Progress Mini -->
+            <hr class="sep" />
+            <div class="weekly-mini">
+              <h3>This Week</h3>
+              <div class="week-dots" id="weekDots"></div>
+              <div class="week-stats">
+                <div class="week-stat">
+                  <span class="ws-label">Avg Calories</span>
+                  <span class="ws-val" id="weekAvgCal">--</span>
+                </div>
+                <div class="week-stat">
+                  <span class="ws-label">Avg Protein</span>
+                  <span class="ws-val" id="weekAvgPro">--</span>
+                </div>
               </div>
             </div>
           </div>
         </section>
       </main>
-    </div> <div id="statsView" class="hidden">
+    </div>
+
+    <!-- Stats View -->
+    <div id="statsView" class="hidden">
       <div class="stats-header">
-        <button class="btn" id="closeStatsBtn">← Back to Tracker</button>
-        <h2>Analytics</h2>
+        <button class="btn" id="closeStatsBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+          Back to Tracker
+        </button>
+        <h2>Analytics Dashboard</h2>
+        <button class="btn btn-sm" id="exportDataBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+          </svg>
+          Export CSV
+        </button>
       </div>
       
       <div class="grid grid-2">
+        <!-- Weekly Summary -->
         <div class="card">
           <div class="card-header">
-            <h3>Weekly Summary (Last 7 Days)</h3>
+            <h3>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              Weekly Summary (Last 7 Days)
+            </h3>
           </div>
           <div class="table-responsive">
             <table class="stats-table" id="weeklyTable">
-              <thead><tr><th>Day</th><th>Cal</th><th>Pro</th><th>Carb</th><th>Fat</th><th>Wt</th><th>Steps</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Day</th>
+                  <th>Cal</th>
+                  <th>Pro</th>
+                  <th>Carb</th>
+                  <th>Fat</th>
+                  <th>Wt</th>
+                  <th>Steps</th>
+                </tr>
+              </thead>
               <tbody></tbody>
               <tfoot>
-                <tr id="weeklyAvgRow"><td>Avg</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                <tr id="weeklyAvgRow">
+                  <td>Avg</td>
+                  <td>-</td>
+                  <td>-</td>
+                  <td>-</td>
+                  <td>-</td>
+                  <td>-</td>
+                  <td>-</td>
+                </tr>
               </tfoot>
             </table>
           </div>
         </div>
 
+        <!-- Monthly Overview -->
         <div class="card">
           <div class="card-header">
-            <h3>Monthly Overview</h3>
+            <h3>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <line x1="12" y1="20" x2="12" y2="10"/>
+                <line x1="18" y1="20" x2="18" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="16"/>
+              </svg>
+              Monthly Overview
+            </h3>
           </div>
           <div class="table-responsive">
             <table class="stats-table" id="monthlyTable">
-              <thead><tr><th>Week Starting</th><th>Avg Cal</th><th>Avg Pro</th><th>Avg Wt</th><th>Total Steps</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Week Starting</th>
+                  <th>Avg Cal</th>
+                  <th>Avg Pro</th>
+                  <th>Avg Wt</th>
+                  <th>Total Steps</th>
+                </tr>
+              </thead>
               <tbody></tbody>
             </table>
           </div>
+        </div>
+
+        <!-- Weight Trend -->
+        <div class="card">
+          <div class="card-header">
+            <h3>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+              </svg>
+              Weight Trend (30 Days)
+            </h3>
+          </div>
+          <div class="chart-area" id="weightChart"></div>
+        </div>
+
+        <!-- Protein Adherence -->
+        <div class="card">
+          <div class="card-header">
+            <h3>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              Goal Adherence (Last 7 Days)
+            </h3>
+          </div>
+          <div class="adherence-grid" id="adherenceGrid"></div>
         </div>
       </div>
     </div>
 
     <footer>
-      Meal Tracker Pro • Data Synced via Firebase
+      <span>Meal Tracker Pro</span>
+      <span class="sep-dot">•</span>
+      <span>Data synced via Firebase</span>
     </footer>
   </div>
 
+  <!-- Settings Modal -->
   <dialog id="settingsModal" class="modal">
     <div class="modal-content large-modal">
       <div class="modal-header">
-        <h2>App Settings</h2>
-        <button class="btn-ghost" id="closeSettingsBtn" style="font-size:1.5rem;">✕</button>
+        <h2>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+          </svg>
+          Settings
+        </h2>
+        <button class="btn-close" id="closeSettingsBtn" aria-label="Close settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
       </div>
       
-      <h3>Preferences</h3>
-      <div class="form">
-        <label>Time Zone Handling</label>
-        <select id="tzSelect">
-          <option value="local">Use Device Time (Auto)</option>
-          <option value="-5">Eastern Time (UTC-5)</option>
-          <option value="-6">Central Time (UTC-6)</option>
-          <option value="-7">Mountain Time (UTC-7)</option>
-          <option value="-8">Pacific Time (UTC-8)</option>
-          <option value="0">UTC</option>
-        </select>
-        <div class="muted">Controls when the "day" switches.</div>
-      </div>
-
-      <hr class="sep" />
-
-      <h3>Daily Targets</h3>
-      <div class="form">
-        <div class="responsive-row">
-          <div><label>Calories</label><input id="targetCalories" type="number" /></div>
-          <div><label>Protein</label><input id="targetProtein" type="number" /></div>
-          <div><label>Carbs</label><input id="targetCarbs" type="number" /></div>
-          <div><label>Fat</label><input id="targetFat" type="number" /></div>
+      <div class="settings-section">
+        <h3>Daily Targets</h3>
+        <div class="form">
+          <div class="responsive-row targets-row">
+            <div class="target-input">
+              <label>Calories</label>
+              <input id="targetCalories" type="number" />
+              <span class="unit">kcal</span>
+            </div>
+            <div class="target-input">
+              <label>Protein</label>
+              <input id="targetProtein" type="number" />
+              <span class="unit">g</span>
+            </div>
+            <div class="target-input">
+              <label>Carbs</label>
+              <input id="targetCarbs" type="number" />
+              <span class="unit">g</span>
+            </div>
+            <div class="target-input">
+              <label>Fat</label>
+              <input id="targetFat" type="number" />
+              <span class="unit">g</span>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="saveTargetsBtn">Update Targets</button>
         </div>
-        <button class="btn btn-primary" id="saveTargetsBtn">Update Targets</button>
       </div>
 
       <hr class="sep" />
 
-      <h3>Manage Food Library</h3>
-      <div style="display:flex; gap:10px; margin:10px 0;">
-        <input id="libSearch" type="search" placeholder="Search saved foods..." style="flex-grow:1;" />
-        <button class="btn btn-primary btn-sm" id="btnAddLibItem">+ Add New</button>
+      <div class="settings-section">
+        <h3>Preferences</h3>
+        <div class="form">
+          <div class="preference-row">
+            <label for="tzSelect">Time Zone</label>
+            <select id="tzSelect">
+              <option value="local">Device Time (Auto)</option>
+              <option value="-5">Eastern (UTC-5)</option>
+              <option value="-6">Central (UTC-6)</option>
+              <option value="-7">Mountain (UTC-7)</option>
+              <option value="-8">Pacific (UTC-8)</option>
+              <option value="0">UTC</option>
+            </select>
+          </div>
+          <p class="hint">Controls when the day resets for logging.</p>
+        </div>
       </div>
+
+      <hr class="sep" />
+
+      <div class="settings-section">
+        <h3>Food Library</h3>
+        <div class="library-controls">
+          <div class="search-input-wrapper">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input id="libSearch" type="search" placeholder="Search saved foods..." />
+          </div>
+          <button class="btn btn-primary btn-sm" id="btnAddLibItem">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Add New
+          </button>
+        </div>
+        
+        <div id="libraryList" class="library-list-container"></div>
+      </div>
+
+      <hr class="sep" />
       
-      <div id="libraryList" class="library-list-container"></div>
-
-      <hr class="sep" />
-      <h3>Tools</h3>
-      <button class="btn" id="btnImportDefaults">Import Default JSON Library</button>
-      <div id="importStatus" class="muted" style="margin-top:5px;"></div>
-
+      <div class="settings-section">
+        <h3>Tools</h3>
+        <div class="tools-row">
+          <button class="btn" id="btnImportDefaults">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+            </svg>
+            Import Default Library
+          </button>
+          <span id="importStatus" class="status-text"></span>
+        </div>
+      </div>
     </div>
   </dialog>
 
+  <!-- Edit Entry Modal -->
   <dialog id="editModal" class="modal">
     <div class="modal-content">
       <h3>Edit Log Entry</h3>
       <div class="form">
-        <label>Name</label>
-        <input id="editName" type="text" />
+        <div class="input-group-inline">
+          <label>Name</label>
+          <input id="editName" type="text" />
+        </div>
         <div class="form-row cols-2">
-          <div><label>Servings</label><input id="editServings" type="number" step="0.25" /></div>
-          <div><label>Calories</label><input id="editCalories" type="number" /></div>
+          <div class="input-group-inline">
+            <label>Servings</label>
+            <input id="editServings" type="number" step="0.25" />
+          </div>
+          <div class="input-group-inline">
+            <label>Calories</label>
+            <input id="editCalories" type="number" />
+          </div>
         </div>
         <div class="form-row cols-3">
-          <div><label>P</label><input id="editP" type="number" /></div>
-          <div><label>C</label><input id="editC" type="number" /></div>
-          <div><label>F</label><input id="editF" type="number" /></div>
+          <div class="input-group-inline">
+            <label>Protein</label>
+            <input id="editP" type="number" />
+          </div>
+          <div class="input-group-inline">
+            <label>Carbs</label>
+            <input id="editC" type="number" />
+          </div>
+          <div class="input-group-inline">
+            <label>Fat</label>
+            <input id="editF" type="number" />
+          </div>
         </div>
       </div>
       <div class="modal-actions">
@@ -302,28 +702,45 @@
     </div>
   </dialog>
 
+  <!-- Edit Library Item Modal -->
   <dialog id="editLibModal" class="modal">
     <div class="modal-content">
       <h3 id="libModalTitle">Edit Saved Meal</h3>
       <div class="form">
-        <label>Name</label>
-        <input id="libName" type="text" placeholder="e.g. Oatmeal" />
+        <div class="input-group-inline">
+          <label>Name</label>
+          <input id="libName" type="text" placeholder="e.g. Oatmeal" />
+        </div>
         <div class="form-row cols-2">
-          <div><label>Calories</label><input id="libCal" type="number" placeholder="0" /></div>
-          <div><label>Protein</label><input id="libPro" type="number" placeholder="0" /></div>
-          <div><label>Carbs</label><input id="libCarb" type="number" placeholder="0" /></div>
-          <div><label>Fat</label><input id="libFat" type="number" placeholder="0" /></div>
+          <div class="input-group-inline">
+            <label>Calories</label>
+            <input id="libCal" type="number" placeholder="0" />
+          </div>
+          <div class="input-group-inline">
+            <label>Protein</label>
+            <input id="libPro" type="number" placeholder="0" />
+          </div>
+          <div class="input-group-inline">
+            <label>Carbs</label>
+            <input id="libCarb" type="number" placeholder="0" />
+          </div>
+          <div class="input-group-inline">
+            <label>Fat</label>
+            <input id="libFat" type="number" placeholder="0" />
+          </div>
         </div>
       </div>
       <div class="modal-actions">
         <button class="btn btn-danger" id="deleteLibBtn">Delete</button>
+        <div class="spacer"></div>
         <button class="btn" id="closeLibBtn">Cancel</button>
-        <button class="btn btn-primary" id="saveLibBtn">Save Changes</button>
+        <button class="btn btn-primary" id="saveLibBtn">Save</button>
       </div>
     </div>
   </dialog>
 
-  <div id="toast" class="toast" role="status"></div>
+  <!-- Toast Notification -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script type="module" src="app.js"></script>
 </body>
