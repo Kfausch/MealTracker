@@ -1224,10 +1224,24 @@ function render() {
 // Start app
 document.addEventListener("DOMContentLoaded", init);
 
-// === NUTRITION LABEL SCANNER ===
+// === NUTRITION LABEL SCANNER (Tesseract.js OCR) ===
 
 let scannerStream = null;
 let scanTargetContext = null; // 'manual' or 'library'
+let tesseractWorker = null;
+
+// Load Tesseract.js dynamically
+async function loadTesseract() {
+  if (window.Tesseract) return window.Tesseract;
+  
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    script.onload = () => resolve(window.Tesseract);
+    script.onerror = () => reject(new Error('Failed to load OCR library'));
+    document.head.appendChild(script);
+  });
+}
 
 // Open scanner modal
 function openScanner(targetContext) {
@@ -1250,10 +1264,9 @@ function openScanner(targetContext) {
 // Start camera stream
 async function startCamera() {
   try {
-    // Check if we're on a mobile device or if camera is available
     const constraints = {
       video: {
-        facingMode: { ideal: "environment" }, // Prefer back camera
+        facingMode: { ideal: "environment" },
         width: { ideal: 1280 },
         height: { ideal: 720 }
       }
@@ -1267,6 +1280,7 @@ async function startCamera() {
     console.error("Camera error:", err);
     // Fall back to file input
     stopCamera();
+    $("cameraContainer").classList.add("hidden");
     $("fileInput").click();
   }
 }
@@ -1290,7 +1304,7 @@ function captureImage() {
   const ctx = canvas.getContext("2d");
   ctx.drawImage(video, 0, 0);
   
-  return canvas.toDataURL("image/jpeg", 0.9);
+  return canvas.toDataURL("image/jpeg", 0.92);
 }
 
 // Process captured image
@@ -1305,13 +1319,25 @@ async function processImage(imageDataUrl) {
   stopCamera();
   
   try {
-    // Extract base64 data
-    const base64Data = imageDataUrl.split(",")[1];
+    // Load Tesseract if not loaded
+    const Tesseract = await loadTesseract();
     
-    // Call Claude API to analyze the nutrition label
-    const nutritionData = await analyzeNutritionLabel(base64Data);
+    // Perform OCR
+    const result = await Tesseract.recognize(imageDataUrl, 'eng', {
+      logger: m => {
+        if (m.status === 'recognizing text') {
+          // Could update progress here if desired
+        }
+      }
+    });
     
-    if (nutritionData) {
+    const text = result.data.text;
+    console.log("OCR Result:", text);
+    
+    // Parse nutrition values from text
+    const nutritionData = parseNutritionLabel(text);
+    
+    if (nutritionData && (nutritionData.calories || nutritionData.protein || nutritionData.carbs || nutritionData.fat)) {
       // Show results
       $("previewOverlay").classList.add("hidden");
       $("scanResults").classList.remove("hidden");
@@ -1323,7 +1349,7 @@ async function processImage(imageDataUrl) {
       $("scanCarbs").value = nutritionData.carbs || "";
       $("scanFat").value = nutritionData.fat || "";
     } else {
-      showScanError("Could not detect nutrition information. Please try again with a clearer image.");
+      showScanError("Could not detect nutrition values. Try taking a clearer photo with good lighting.");
     }
   } catch (err) {
     console.error("Scan error:", err);
@@ -1331,71 +1357,81 @@ async function processImage(imageDataUrl) {
   }
 }
 
-// Analyze nutrition label using Claude API
-async function analyzeNutritionLabel(base64Image) {
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1000,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: "image/jpeg",
-                data: base64Image
-              }
-            },
-            {
-              type: "text",
-              text: `Analyze this nutrition label image and extract the following values per serving:
-- Calories (kcal)
-- Protein (grams)
-- Total Carbohydrates (grams)
-- Total Fat (grams)
-
-Respond ONLY with a JSON object in this exact format, no other text:
-{"calories": number, "protein": number, "carbs": number, "fat": number}
-
-If you cannot read any value clearly, use null for that field.
-If this is not a nutrition label, respond with: {"error": "not_nutrition_label"}`
-            }
-          ]
+// Parse nutrition label text using regex patterns
+function parseNutritionLabel(text) {
+  // Normalize text: lowercase, fix common OCR errors
+  const normalizedText = text
+    .toLowerCase()
+    .replace(/[oO]/g, match => match === 'O' ? '0' : match)
+    .replace(/\s+/g, ' ')
+    .replace(/,/g, '');
+  
+  const result = {
+    calories: null,
+    protein: null,
+    carbs: null,
+    fat: null
+  };
+  
+  // Patterns for different nutrition label formats
+  const patterns = {
+    // Calories: "Calories 200", "Calories: 200", "Energy 200kcal", "200 calories"
+    calories: [
+      /calories[:\s]*(\d+)/i,
+      /(\d+)\s*calories/i,
+      /energy[:\s]*(\d+)\s*kcal/i,
+      /kcal[:\s]*(\d+)/i,
+      /(\d+)\s*kcal/i,
+      /cal[:\s]*(\d+)/i
+    ],
+    // Protein: "Protein 25g", "Protein: 25 g", "25g protein"
+    protein: [
+      /protein[:\s]*(\d+\.?\d*)\s*g/i,
+      /(\d+\.?\d*)\s*g\s*protein/i,
+      /protein[:\s]*(\d+)/i,
+      /prot[:\s]*(\d+\.?\d*)/i
+    ],
+    // Carbs: "Total Carbohydrate 30g", "Carbs 30g", "Carbohydrates: 30g"
+    carbs: [
+      /total\s*carb[a-z]*[:\s]*(\d+\.?\d*)\s*g/i,
+      /carb[a-z]*[:\s]*(\d+\.?\d*)\s*g/i,
+      /(\d+\.?\d*)\s*g\s*carb/i,
+      /carb[a-z]*[:\s]*(\d+)/i,
+      /glucides[:\s]*(\d+\.?\d*)/i
+    ],
+    // Fat: "Total Fat 10g", "Fat 10g", "Fat: 10 g"
+    fat: [
+      /total\s*fat[:\s]*(\d+\.?\d*)\s*g/i,
+      /(?<!trans\s)(?<!saturated\s)fat[:\s]*(\d+\.?\d*)\s*g/i,
+      /(\d+\.?\d*)\s*g\s*(?:total\s*)?fat/i,
+      /lipides[:\s]*(\d+\.?\d*)/i,
+      /^fat[:\s]*(\d+)/im
+    ]
+  };
+  
+  // Try each pattern for each nutrient
+  for (const [nutrient, patternList] of Object.entries(patterns)) {
+    for (const pattern of patternList) {
+      const match = text.match(pattern) || normalizedText.match(pattern);
+      if (match && match[1]) {
+        const value = parseFloat(match[1]);
+        if (!isNaN(value) && value >= 0 && value < 10000) {
+          result[nutrient] = Math.round(value);
+          break;
         }
-      ]
-    })
-  });
-  
-  if (!response.ok) {
-    throw new Error("API request failed");
-  }
-  
-  const data = await response.json();
-  const text = data.content[0]?.text || "";
-  
-  // Parse JSON response
-  try {
-    // Clean up the response in case there's extra text
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const result = JSON.parse(jsonMatch[0]);
-      if (result.error) {
-        throw new Error("This doesn't appear to be a nutrition label");
       }
-      return result;
     }
-  } catch (e) {
-    console.error("Parse error:", e);
   }
   
-  return null;
+  // Additional validation: if calories seems too low but we have macros, estimate
+  if (!result.calories && (result.protein || result.carbs || result.fat)) {
+    const estimatedCal = (result.protein || 0) * 4 + (result.carbs || 0) * 4 + (result.fat || 0) * 9;
+    if (estimatedCal > 0) {
+      result.calories = Math.round(estimatedCal);
+    }
+  }
+  
+  return result;
 }
 
 // Show scan error
@@ -1416,15 +1452,15 @@ function applyScannedValues() {
   const fat = num($("scanFat").value);
   
   if (scanTargetContext === "manual") {
-    $("manualCalories").value = calories;
-    $("manualProtein").value = protein;
-    $("manualCarbs").value = carbs;
-    $("manualFat").value = fat;
+    $("manualCalories").value = calories || "";
+    $("manualProtein").value = protein || "";
+    $("manualCarbs").value = carbs || "";
+    $("manualFat").value = fat || "";
   } else if (scanTargetContext === "library") {
-    $("libCal").value = calories;
-    $("libPro").value = protein;
-    $("libCarb").value = carbs;
-    $("libFat").value = fat;
+    $("libCal").value = calories || "";
+    $("libPro").value = protein || "";
+    $("libCarb").value = carbs || "";
+    $("libFat").value = fat || "";
   }
   
   closeScanner();
@@ -1464,11 +1500,14 @@ $("fileInput").addEventListener("change", (e) => {
   if (file) {
     const reader = new FileReader();
     reader.onload = (event) => {
+      // Show the preview container since camera isn't being used
+      $("cameraContainer").classList.add("hidden");
+      $("previewContainer").classList.remove("hidden");
       processImage(event.target.result);
     };
     reader.readAsDataURL(file);
   }
-  e.target.value = ""; // Reset for future use
+  e.target.value = "";
 });
 
 // Close scanner when modal backdrop is clicked
