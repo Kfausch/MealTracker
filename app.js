@@ -1223,3 +1223,262 @@ function render() {
 
 // Start app
 document.addEventListener("DOMContentLoaded", init);
+
+// === NUTRITION LABEL SCANNER ===
+
+let scannerStream = null;
+let scanTargetContext = null; // 'manual' or 'library'
+
+// Open scanner modal
+function openScanner(targetContext) {
+  scanTargetContext = targetContext;
+  const modal = $("scannerModal");
+  
+  // Reset UI state
+  $("cameraContainer").classList.remove("hidden");
+  $("previewContainer").classList.add("hidden");
+  $("scanResults").classList.add("hidden");
+  $("scanError").classList.add("hidden");
+  $("captureBtn").classList.remove("hidden");
+  $("useScanBtn").classList.add("hidden");
+  $("previewOverlay").classList.remove("hidden");
+  
+  modal.showModal();
+  startCamera();
+}
+
+// Start camera stream
+async function startCamera() {
+  try {
+    // Check if we're on a mobile device or if camera is available
+    const constraints = {
+      video: {
+        facingMode: { ideal: "environment" }, // Prefer back camera
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      }
+    };
+    
+    scannerStream = await navigator.mediaDevices.getUserMedia(constraints);
+    const video = $("cameraVideo");
+    video.srcObject = scannerStream;
+    await video.play();
+  } catch (err) {
+    console.error("Camera error:", err);
+    // Fall back to file input
+    stopCamera();
+    $("fileInput").click();
+  }
+}
+
+// Stop camera stream
+function stopCamera() {
+  if (scannerStream) {
+    scannerStream.getTracks().forEach(track => track.stop());
+    scannerStream = null;
+  }
+  const video = $("cameraVideo");
+  video.srcObject = null;
+}
+
+// Capture image from video
+function captureImage() {
+  const video = $("cameraVideo");
+  const canvas = document.createElement("canvas");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0);
+  
+  return canvas.toDataURL("image/jpeg", 0.9);
+}
+
+// Process captured image
+async function processImage(imageDataUrl) {
+  // Show preview
+  $("cameraContainer").classList.add("hidden");
+  $("previewContainer").classList.remove("hidden");
+  $("previewImage").src = imageDataUrl;
+  $("previewOverlay").classList.remove("hidden");
+  $("captureBtn").classList.add("hidden");
+  
+  stopCamera();
+  
+  try {
+    // Extract base64 data
+    const base64Data = imageDataUrl.split(",")[1];
+    
+    // Call Claude API to analyze the nutrition label
+    const nutritionData = await analyzeNutritionLabel(base64Data);
+    
+    if (nutritionData) {
+      // Show results
+      $("previewOverlay").classList.add("hidden");
+      $("scanResults").classList.remove("hidden");
+      $("useScanBtn").classList.remove("hidden");
+      
+      // Populate fields
+      $("scanCalories").value = nutritionData.calories || "";
+      $("scanProtein").value = nutritionData.protein || "";
+      $("scanCarbs").value = nutritionData.carbs || "";
+      $("scanFat").value = nutritionData.fat || "";
+    } else {
+      showScanError("Could not detect nutrition information. Please try again with a clearer image.");
+    }
+  } catch (err) {
+    console.error("Scan error:", err);
+    showScanError(err.message || "Failed to analyze image. Please try again.");
+  }
+}
+
+// Analyze nutrition label using Claude API
+async function analyzeNutritionLabel(base64Image) {
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: "image/jpeg",
+                data: base64Image
+              }
+            },
+            {
+              type: "text",
+              text: `Analyze this nutrition label image and extract the following values per serving:
+- Calories (kcal)
+- Protein (grams)
+- Total Carbohydrates (grams)
+- Total Fat (grams)
+
+Respond ONLY with a JSON object in this exact format, no other text:
+{"calories": number, "protein": number, "carbs": number, "fat": number}
+
+If you cannot read any value clearly, use null for that field.
+If this is not a nutrition label, respond with: {"error": "not_nutrition_label"}`
+            }
+          ]
+        }
+      ]
+    })
+  });
+  
+  if (!response.ok) {
+    throw new Error("API request failed");
+  }
+  
+  const data = await response.json();
+  const text = data.content[0]?.text || "";
+  
+  // Parse JSON response
+  try {
+    // Clean up the response in case there's extra text
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const result = JSON.parse(jsonMatch[0]);
+      if (result.error) {
+        throw new Error("This doesn't appear to be a nutrition label");
+      }
+      return result;
+    }
+  } catch (e) {
+    console.error("Parse error:", e);
+  }
+  
+  return null;
+}
+
+// Show scan error
+function showScanError(message) {
+  $("previewContainer").classList.add("hidden");
+  $("scanResults").classList.add("hidden");
+  $("scanError").classList.remove("hidden");
+  $("scanErrorMsg").textContent = message;
+  $("captureBtn").classList.add("hidden");
+  $("useScanBtn").classList.add("hidden");
+}
+
+// Apply scanned values to form
+function applyScannedValues() {
+  const calories = num($("scanCalories").value);
+  const protein = num($("scanProtein").value);
+  const carbs = num($("scanCarbs").value);
+  const fat = num($("scanFat").value);
+  
+  if (scanTargetContext === "manual") {
+    $("manualCalories").value = calories;
+    $("manualProtein").value = protein;
+    $("manualCarbs").value = carbs;
+    $("manualFat").value = fat;
+  } else if (scanTargetContext === "library") {
+    $("libCal").value = calories;
+    $("libPro").value = protein;
+    $("libCarb").value = carbs;
+    $("libFat").value = fat;
+  }
+  
+  closeScanner();
+  toast("Values applied!");
+}
+
+// Close scanner
+function closeScanner() {
+  stopCamera();
+  $("scannerModal").close();
+}
+
+// Scanner event listeners
+$("scanLabelBtn").addEventListener("click", () => openScanner("manual"));
+$("scanLibLabelBtn").addEventListener("click", () => openScanner("library"));
+
+$("closeScannerBtn").addEventListener("click", closeScanner);
+$("cancelScanBtn").addEventListener("click", closeScanner);
+
+$("captureBtn").addEventListener("click", () => {
+  const imageData = captureImage();
+  processImage(imageData);
+});
+
+$("useScanBtn").addEventListener("click", applyScannedValues);
+
+$("retryScnBtn").addEventListener("click", () => {
+  $("scanError").classList.add("hidden");
+  $("cameraContainer").classList.remove("hidden");
+  $("captureBtn").classList.remove("hidden");
+  startCamera();
+});
+
+// Handle file input (fallback for devices without camera API)
+$("fileInput").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      processImage(event.target.result);
+    };
+    reader.readAsDataURL(file);
+  }
+  e.target.value = ""; // Reset for future use
+});
+
+// Close scanner when modal backdrop is clicked
+$("scannerModal").addEventListener("click", (e) => {
+  if (e.target === $("scannerModal")) {
+    closeScanner();
+  }
+});
+
+// Clean up camera when modal closes
+$("scannerModal").addEventListener("close", () => {
+  stopCamera();
+});
