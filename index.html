@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fitness Tracker Pro</title>
-  <meta name="description" content="Complete fitness tracker with nutrition logging and workout tracking." />
+  <meta name="description" content="Professional nutrition & workout tracker with cloud sync." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -21,7 +21,6 @@
       </div>
       <h2>Welcome Back</h2>
       <p class="sub">Sign in to sync your fitness data across all devices.</p>
-      
       <form id="authForm" class="auth-form">
         <div class="input-group">
           <input type="email" id="authEmail" placeholder=" " required />
@@ -32,12 +31,9 @@
           <label for="authPass">Password</label>
         </div>
         <div id="authError" class="error-msg"></div>
-        
         <button type="submit" class="btn btn-primary full-width" id="btnLogin">
           <span>Log In</span>
-          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M5 12h14M12 5l7 7-7 7"/>
-          </svg>
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </button>
         <button type="button" class="btn btn-secondary full-width" id="btnSignup">Create Account</button>
       </form>
@@ -57,140 +53,86 @@
         <div>
           <h1>Fitness Tracker</h1>
           <div class="sub sync-status" id="syncStatus">
-            <span class="sync-dot"></span>
-            <span>Synced</span>
+            <span class="sync-dot"></span><span>Synced</span>
           </div>
         </div>
       </div>
-
       <div class="top-actions">
         <div class="streak-badge" id="streakBadge" title="Current logging streak">
-          <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
-            <path d="M12 2c.55 0 1 .45 1 1v1c0 .55-.45 1-1 1s-1-.45-1-1V3c0-.55.45-1 1-1zm8.07 2.93c.39.39.39 1.02 0 1.41l-.71.71c-.39.39-1.02.39-1.41 0-.39-.39-.39-1.02 0-1.41l.71-.71c.39-.39 1.02-.39 1.41 0zM20 12c0 .55-.45 1-1 1h-1c-.55 0-1-.45-1-1s.45-1 1-1h1c.55 0 1 .45 1 1zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M12 2c.55 0 1 .45 1 1v1c0 .55-.45 1-1 1s-1-.45-1-1V3c0-.55.45-1 1-1zm8.07 2.93c.39.39.39 1.02 0 1.41l-.71.71c-.39.39-1.02.39-1.41 0-.39-.39-.39-1.02 0-1.41l.71-.71c.39-.39 1.02-.39 1.41 0zM20 12c0 .55-.45 1-1 1h-1c-.55 0-1-.45-1-1s.45-1 1-1h1c.55 0 1 .45 1 1zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
           <span id="streakCount">0</span>
           <span class="streak-label">days</span>
         </div>
         <button class="btn btn-ghost" id="btnStats" type="button">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-            <path d="M18 20V10M12 20V4M6 20v-6"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
           <span>Stats</span>
         </button>
         <button class="btn btn-ghost" id="btnSettings" type="button">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           <span>Settings</span>
         </button>
-        <button class="btn btn-ghost" id="themeToggle" type="button" title="Toggle theme">
-          <svg class="theme-icon-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-            <circle cx="12" cy="12" r="5"/>
-            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
-          </svg>
-          <svg class="theme-icon-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
-          </svg>
+        <button class="btn btn-ghost" id="themeToggle" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
         </button>
         <button class="btn btn-ghost btn-logout" id="btnLogout" type="button">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
         </button>
       </div>
     </header>
 
-    <!-- ===== MAIN NAV TABS ===== -->
-    <nav class="main-nav" id="mainNav">
-      <button class="main-nav-btn active" data-view="nutrition">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-          <path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/>
-        </svg>
+    <!-- Main Navigation Tabs -->
+    <div class="main-nav">
+      <button class="main-nav-btn active" data-view="nutrition" id="navNutrition">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>
         Nutrition
       </button>
-      <button class="main-nav-btn" data-view="workout">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-          <path d="M6.5 6.5h11M6.5 17.5h11"/>
-          <rect x="2" y="4" width="4" height="6" rx="1"/>
-          <rect x="18" y="4" width="4" height="6" rx="1"/>
-          <rect x="2" y="14" width="4" height="6" rx="1"/>
-          <rect x="18" y="14" width="4" height="6" rx="1"/>
-          <line x1="12" y1="2" x2="12" y2="22" stroke-width="2.5"/>
-        </svg>
+      <button class="main-nav-btn" data-view="workout" id="navWorkout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M6.5 6.5h11M6.5 17.5h11"/><rect x="2" y="4" width="4.5" height="7" rx="1"/><rect x="17.5" y="4" width="4.5" height="7" rx="1"/><rect x="2" y="13" width="4.5" height="7" rx="1"/><rect x="17.5" y="13" width="4.5" height="7" rx="1"/><line x1="12" y1="1" x2="12" y2="23"/></svg>
         Workout
       </button>
-    </nav>
+    </div>
 
-    <!-- ============================================================ -->
-    <!-- NUTRITION VIEW (existing tracker) -->
-    <!-- ============================================================ -->
+    <!-- ============ NUTRITION VIEW ============ -->
     <div id="nutritionView">
-      <!-- Date Navigation -->
       <div class="date-nav-container">
         <button class="btn-icon-nav" id="prevDateBtn" title="Previous day">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-            <path d="M15 18l-6-6 6-6"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M15 18l-6-6 6-6"/></svg>
         </button>
         <div class="date-display">
           <span id="dateLabel" class="date-label">Today</span>
           <span id="dateSub" class="date-sub">...</span>
         </div>
         <button class="btn-icon-nav" id="nextDateBtn" title="Next day">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M9 18l6-6-6-6"/></svg>
         </button>
         <button class="btn btn-sm btn-copy" id="copyPrevDayBtn" title="Copy meals from previous day">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
           <span>Copy Yesterday</span>
         </button>
       </div>
-
-      <!-- Main Grid -->
       <main class="grid grid-2">
-        <!-- Left Column: Input & Log -->
         <section class="grid">
-          <!-- Input Card with Tabs -->
           <div class="card p-0">
             <div class="tabs">
               <button class="tab-btn active" data-tab="search">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                  <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-                </svg>
-                Search
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>Search
               </button>
               <button class="tab-btn" data-tab="recent">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                  <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-                </svg>
-                Recent
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Recent
               </button>
               <button class="tab-btn" data-tab="manual">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                  <path d="M12 5v14M5 12h14"/>
-                </svg>
-                Manual
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 5v14M5 12h14"/></svg>Manual
               </button>
             </div>
-
-            <!-- Search Tab -->
             <div class="tab-content" id="tab-search">
               <div class="form">
                 <div class="search-row">
                   <div class="search-input-wrapper">
-                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-                    </svg>
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
                     <input id="mealSearch" type="search" placeholder="Search your meal library..." autocomplete="off" />
                     <span class="search-shortcut">⌘K</span>
                   </div>
                 </div>
-
                 <div class="meal-select-container">
                   <select id="mealDropdown" aria-label="Meal list" size="6"></select>
                   <div class="meal-preview" id="mealPreview">
@@ -203,7 +145,6 @@
                     </div>
                   </div>
                 </div>
-
                 <div class="servings-row">
                   <label>Servings</label>
                   <div class="servings-controls">
@@ -214,167 +155,81 @@
                     <button type="button" class="btn btn-sm btn-adjust" data-adjust="0.25">+¼</button>
                   </div>
                 </div>
-
                 <button class="btn btn-primary btn-add-meal" id="addMealBtn" type="button">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                    <path d="M12 5v14M5 12h14"/>
-                  </svg>
-                  Add to Log
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 5v14M5 12h14"/></svg>Add to Log
                 </button>
               </div>
             </div>
-
-            <!-- Recent Tab -->
             <div class="tab-content hidden" id="tab-recent">
               <p class="muted">Quick-add from your recently logged meals.</p>
               <div id="recentList" class="recent-grid"></div>
               <div id="noRecents" class="empty-state">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
-                  <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-                </svg>
-                <p>No recent meals yet</p>
-                <span>Start logging to see your history here</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                <p>No recent meals yet</p><span>Start logging to see your history here</span>
               </div>
             </div>
-
-            <!-- Manual Tab -->
             <div class="tab-content hidden" id="tab-manual">
               <div class="form" id="manualForm">
-                <!-- Scan Button -->
                 <button type="button" class="btn btn-scan" id="scanLabelBtn">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
-                    <circle cx="12" cy="13" r="4"/>
-                  </svg>
-                  Scan Nutrition Label
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>Scan Nutrition Label
                 </button>
-                
                 <div class="form-row cols-2">
-                  <div class="input-group-inline">
-                    <label for="manualName">Name</label>
-                    <input id="manualName" type="text" placeholder="e.g. Grilled Chicken" />
-                  </div>
-                  <div class="input-group-inline">
-                    <label for="manualServings">Servings</label>
-                    <input id="manualServings" type="number" min="0" step="0.25" value="1" />
-                  </div>
+                  <div class="input-group-inline"><label for="manualName">Name</label><input id="manualName" type="text" placeholder="e.g. Grilled Chicken" /></div>
+                  <div class="input-group-inline"><label for="manualServings">Servings</label><input id="manualServings" type="number" min="0" step="0.25" value="1" /></div>
                 </div>
                 <div class="form-row cols-4 macro-inputs">
-                  <div class="input-group-inline">
-                    <label>Cal</label>
-                    <input id="manualCalories" type="number" placeholder="0" />
-                  </div>
-                  <div class="input-group-inline">
-                    <label>Protein</label>
-                    <input id="manualProtein" type="number" placeholder="0" />
-                  </div>
-                  <div class="input-group-inline">
-                    <label>Carbs</label>
-                    <input id="manualCarbs" type="number" placeholder="0" />
-                  </div>
-                  <div class="input-group-inline">
-                    <label>Fat</label>
-                    <input id="manualFat" type="number" placeholder="0" />
-                  </div>
+                  <div class="input-group-inline"><label>Cal</label><input id="manualCalories" type="number" placeholder="0" /></div>
+                  <div class="input-group-inline"><label>Protein</label><input id="manualProtein" type="number" placeholder="0" /></div>
+                  <div class="input-group-inline"><label>Carbs</label><input id="manualCarbs" type="number" placeholder="0" /></div>
+                  <div class="input-group-inline"><label>Fat</label><input id="manualFat" type="number" placeholder="0" /></div>
                 </div>
                 <div class="button-row">
                   <button class="btn btn-secondary" id="addSaveManualBtn" type="button">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
-                      <polyline points="17,21 17,13 7,13 7,21"/>
-                      <polyline points="7,3 7,8 15,8"/>
-                    </svg>
-                    Add & Save to Library
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg>Add & Save to Library
                   </button>
                   <button class="btn" id="addManualBtn" type="button">Add Log Only</button>
                 </div>
               </div>
             </div>
           </div>
-
-          <!-- Daily Log Card -->
           <div class="card">
             <div class="card-header">
-              <h2>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                  <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                  <polyline points="14,2 14,8 20,8"/>
-                  <line x1="16" y1="13" x2="8" y2="13"/>
-                  <line x1="16" y1="17" x2="8" y2="17"/>
-                  <polyline points="10,9 9,9 8,9"/>
-                </svg>
-                Daily Log
-              </h2>
-              <div class="loader" id="logLoader">
-                <div class="spinner"></div>
-                <span>Syncing...</span>
-              </div>
+              <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/></svg>Daily Log</h2>
+              <div class="loader" id="logLoader"><div class="spinner"></div><span>Syncing...</span></div>
             </div>
-            
-            <!-- Metrics Bar -->
             <div class="metrics-bar">
               <div class="metric-input">
-                <label>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                    <path d="M12 3v18M5 8h14a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1V9a1 1 0 011-1z"/>
-                  </svg>
-                  Weight
-                </label>
+                <label><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 3v18M5 8h14a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1V9a1 1 0 011-1z"/></svg>Weight</label>
                 <input id="dayWeight" type="number" step="0.1" placeholder="lbs" />
               </div>
               <div class="metric-input">
-                <label>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                    <path d="M4 19.5A2.5 2.5 0 016.5 17H20M4 4.5A2.5 2.5 0 016.5 7H20"/>
-                  </svg>
-                  Steps
-                </label>
+                <label><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M4 19.5A2.5 2.5 0 016.5 17H20M4 4.5A2.5 2.5 0 016.5 7H20"/></svg>Steps</label>
                 <input id="daySteps" type="number" placeholder="0" />
               </div>
               <button id="saveMetricsBtn" class="btn btn-xs">Save</button>
             </div>
-
-            <!-- Daily Notes -->
             <div class="notes-section">
               <div class="notes-header" id="notesToggle">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 <span>Daily Notes</span>
-                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                  <polyline points="6 9 12 15 18 9"/>
-                </svg>
+                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="6 9 12 15 18 9"/></svg>
               </div>
               <div class="notes-content hidden" id="notesContent">
                 <textarea id="dayNotes" placeholder="Add notes about your day, how you felt, etc..."></textarea>
                 <button id="saveNotesBtn" class="btn btn-xs">Save Note</button>
               </div>
             </div>
-
             <hr class="sep" />
-            
             <div id="selectedMeals" class="log-list"></div>
             <div id="emptyLog" class="empty-state small">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40">
-                <path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/>
-              </svg>
-              <p>Nothing logged yet</p>
-              <span>Add meals to start tracking</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>
+              <p>Nothing logged yet</p><span>Add meals to start tracking</span>
             </div>
           </div>
         </section>
-
-        <!-- Right Column: Nutrition Summary -->
         <section class="grid">
           <div class="card summary-card">
-            <h2>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                <path d="M21.21 15.89A10 10 0 118 2.83M22 12A10 10 0 0012 2v10z"/>
-              </svg>
-              Nutrition Summary
-            </h2>
-            
+            <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M21.21 15.89A10 10 0 118 2.83M22 12A10 10 0 0012 2v10z"/></svg>Nutrition Summary</h2>
             <div class="macro-dashboard">
               <div class="chart-container">
                 <div class="donut-chart" id="macroDonut">
@@ -385,75 +240,25 @@
                 </div>
               </div>
               <div class="legend">
-                <div class="legend-item">
-                  <span class="dot p-dot"></span>
-                  <span class="l-label">Protein</span>
-                  <span class="l-val" id="dispP">0g</span>
-                </div>
-                <div class="legend-item">
-                  <span class="dot c-dot"></span>
-                  <span class="l-label">Carbs</span>
-                  <span class="l-val" id="dispC">0g</span>
-                </div>
-                <div class="legend-item">
-                  <span class="dot f-dot"></span>
-                  <span class="l-label">Fat</span>
-                  <span class="l-val" id="dispF">0g</span>
-                </div>
+                <div class="legend-item"><span class="dot p-dot"></span><span class="l-label">Protein</span><span class="l-val" id="dispP">0g</span></div>
+                <div class="legend-item"><span class="dot c-dot"></span><span class="l-label">Carbs</span><span class="l-val" id="dispC">0g</span></div>
+                <div class="legend-item"><span class="dot f-dot"></span><span class="l-label">Fat</span><span class="l-val" id="dispF">0g</span></div>
               </div>
             </div>
-            
             <hr class="sep" />
-            
             <div class="mini-bars">
-              <div class="mini-stat">
-                <div class="ms-label">
-                  <span>Calories</span>
-                  <span class="ms-values"><span id="calCurrent">0</span> / <span id="calTarget">0</span></span>
-                </div>
-                <div class="ms-track"><div class="ms-fill" id="barCal"></div></div>
-                <div class="ms-rem" id="remCal">0 left</div>
-              </div>
-              <div class="mini-stat">
-                <div class="ms-label">
-                  <span>Protein</span>
-                  <span class="ms-values"><span id="proCurrent">0</span>g / <span id="proTarget">0</span>g</span>
-                </div>
-                <div class="ms-track"><div class="ms-fill p-fill" id="barPro"></div></div>
-                <div class="ms-rem" id="remPro">0g left</div>
-              </div>
-              <div class="mini-stat">
-                <div class="ms-label">
-                  <span>Carbs</span>
-                  <span class="ms-values"><span id="carbCurrent">0</span>g / <span id="carbTarget">0</span>g</span>
-                </div>
-                <div class="ms-track"><div class="ms-fill c-fill" id="barCarb"></div></div>
-                <div class="ms-rem" id="remCarb">0g left</div>
-              </div>
-              <div class="mini-stat">
-                <div class="ms-label">
-                  <span>Fat</span>
-                  <span class="ms-values"><span id="fatCurrent">0</span>g / <span id="fatTarget">0</span>g</span>
-                </div>
-                <div class="ms-track"><div class="ms-fill f-fill" id="barFat"></div></div>
-                <div class="ms-rem" id="remFat">0g left</div>
-              </div>
+              <div class="mini-stat"><div class="ms-label"><span>Calories</span><span class="ms-values"><span id="calCurrent">0</span> / <span id="calTarget">0</span></span></div><div class="ms-track"><div class="ms-fill" id="barCal"></div></div><div class="ms-rem" id="remCal">0 left</div></div>
+              <div class="mini-stat"><div class="ms-label"><span>Protein</span><span class="ms-values"><span id="proCurrent">0</span>g / <span id="proTarget">0</span>g</span></div><div class="ms-track"><div class="ms-fill p-fill" id="barPro"></div></div><div class="ms-rem" id="remPro">0g left</div></div>
+              <div class="mini-stat"><div class="ms-label"><span>Carbs</span><span class="ms-values"><span id="carbCurrent">0</span>g / <span id="carbTarget">0</span>g</span></div><div class="ms-track"><div class="ms-fill c-fill" id="barCarb"></div></div><div class="ms-rem" id="remCarb">0g left</div></div>
+              <div class="mini-stat"><div class="ms-label"><span>Fat</span><span class="ms-values"><span id="fatCurrent">0</span>g / <span id="fatTarget">0</span>g</span></div><div class="ms-track"><div class="ms-fill f-fill" id="barFat"></div></div><div class="ms-rem" id="remFat">0g left</div></div>
             </div>
-
-            <!-- Weekly Progress Mini -->
             <hr class="sep" />
             <div class="weekly-mini">
               <h3>This Week</h3>
               <div class="week-dots" id="weekDots"></div>
               <div class="week-stats">
-                <div class="week-stat">
-                  <span class="ws-label">Avg Calories</span>
-                  <span class="ws-val" id="weekAvgCal">--</span>
-                </div>
-                <div class="week-stat">
-                  <span class="ws-label">Avg Protein</span>
-                  <span class="ws-val" id="weekAvgPro">--</span>
-                </div>
+                <div class="week-stat"><span class="ws-label">Avg Calories</span><span class="ws-val" id="weekAvgCal">--</span></div>
+                <div class="week-stat"><span class="ws-label">Avg Protein</span><span class="ws-val" id="weekAvgPro">--</span></div>
               </div>
             </div>
           </div>
@@ -461,321 +266,104 @@
       </main>
     </div>
 
-    <!-- ============================================================ -->
-    <!-- WORKOUT VIEW -->
-    <!-- ============================================================ -->
+    <!-- ============ WORKOUT VIEW ============ -->
     <div id="workoutView" class="hidden">
-      <!-- Date Navigation (Workout) -->
       <div class="date-nav-container">
         <button class="btn-icon-nav" id="woPrevDateBtn" title="Previous day">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-            <path d="M15 18l-6-6 6-6"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M15 18l-6-6 6-6"/></svg>
         </button>
         <div class="date-display">
           <span id="woDateLabel" class="date-label">Today</span>
           <span id="woDateSub" class="date-sub">...</span>
         </div>
         <button class="btn-icon-nav" id="woNextDateBtn" title="Next day">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M9 18l6-6-6-6"/></svg>
         </button>
       </div>
 
-      <main class="grid grid-2">
-        <!-- Left Column: Workout Tracker -->
-        <section class="grid">
-          <!-- Today's Workout Card -->
-          <div class="card">
-            <div class="card-header">
-              <h2>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                  <path d="M6.5 6.5h11M6.5 17.5h11"/>
-                  <rect x="2" y="4" width="4" height="6" rx="1"/>
-                  <rect x="18" y="4" width="4" height="6" rx="1"/>
-                  <rect x="2" y="14" width="4" height="6" rx="1"/>
-                  <rect x="18" y="14" width="4" height="6" rx="1"/>
-                  <line x1="12" y1="2" x2="12" y2="22" stroke-width="2.5"/>
-                </svg>
-                <span id="woDayTitle">Today's Workout</span>
-              </h2>
-              <div class="wo-header-actions">
-                <span class="wo-completion" id="woCompletion">0%</span>
-                <button class="btn btn-xs btn-primary" id="woAddExerciseBtn" title="Add exercise">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                    <path d="M12 5v14M5 12h14"/>
-                  </svg>
-                  Add Exercise
-                </button>
-              </div>
-            </div>
+      <!-- Quick Nav: Last Week / Today buttons -->
+      <div class="wo-quick-nav">
+        <button class="btn btn-sm" id="woLastWeekBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/></svg>
+          Last Week
+        </button>
+        <span class="wo-quick-nav-label" id="woQuickNavLabel"></span>
+        <button class="btn btn-sm btn-primary" id="woTodayBtn">
+          Today
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </button>
+      </div>
 
-            <!-- Workout Duration & Rest Timer -->
-            <div class="wo-timer-bar">
-              <div class="wo-duration">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                  <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-                </svg>
-                <span id="woDuration">0:00</span>
-              </div>
-              <div class="wo-rest-timer hidden" id="woRestTimer">
-                <span class="rest-label">Rest</span>
-                <span class="rest-time" id="restTimeDisplay">0:00</span>
-                <button class="btn-xs-icon" id="restTimerSkip" title="Skip rest">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                    <polygon points="5,4 15,12 5,20"/><line x1="19" y1="5" x2="19" y2="19"/>
-                  </svg>
-                </button>
-              </div>
-              <button class="btn btn-xs" id="woStartBtn">Start Workout</button>
-              <button class="btn btn-xs btn-danger hidden" id="woFinishBtn">Finish</button>
-            </div>
+      <!-- Workout Day Header -->
+      <div class="wo-day-header" id="woDayHeader">
+        <div class="wo-day-title">
+          <h2 id="woDayTitle">Rest Day</h2>
+          <span class="wo-day-focus" id="woDayFocus"></span>
+        </div>
+      </div>
 
-            <!-- Exercise List -->
-            <div id="woExerciseList" class="wo-exercise-list"></div>
-            <div id="woEmptyState" class="empty-state small">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40">
-                <path d="M6.5 6.5h11M6.5 17.5h11"/>
-                <rect x="2" y="4" width="4" height="6" rx="1"/>
-                <rect x="18" y="4" width="4" height="6" rx="1"/>
-                <rect x="2" y="14" width="4" height="6" rx="1"/>
-                <rect x="18" y="14" width="4" height="6" rx="1"/>
-                <line x1="12" y1="2" x2="12" y2="22" stroke-width="2.5"/>
-              </svg>
-              <p>No workout scheduled</p>
-              <span>Edit your schedule in Settings or add exercises</span>
-            </div>
-          </div>
-        </section>
+      <!-- Timer Bar -->
+      <div class="wo-timer-bar" id="woTimerBar">
+        <div class="wo-timer-left">
+          <span class="wo-duration" id="woDuration">0:00</span>
+          <span class="wo-duration-label">Duration</span>
+        </div>
+        <div class="wo-timer-center" id="woRestTimerArea" style="display:none">
+          <span class="wo-rest-label">Rest</span>
+          <span class="wo-rest-time" id="woRestTime">0:00</span>
+          <button class="btn btn-xs" id="woSkipRest">Skip</button>
+        </div>
+        <div class="wo-timer-right">
+          <button class="btn btn-primary btn-sm" id="woStartBtn">Start Workout</button>
+          <button class="btn btn-sm btn-finish hidden" id="woFinishBtn">Finish</button>
+        </div>
+      </div>
 
-        <!-- Right Column: Workout Summary -->
-        <section class="grid">
-          <!-- Workout Summary Card -->
-          <div class="card summary-card">
-            <h2>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                <path d="M18 20V10M12 20V4M6 20v-6"/>
-              </svg>
-              Workout Summary
-            </h2>
-            <div class="wo-summary-stats">
-              <div class="wo-summary-item">
-                <span class="wo-summary-label">Exercises</span>
-                <span class="wo-summary-val" id="woSummaryExercises">0</span>
-              </div>
-              <div class="wo-summary-item">
-                <span class="wo-summary-label">Sets Done</span>
-                <span class="wo-summary-val" id="woSummarySets">0</span>
-              </div>
-              <div class="wo-summary-item">
-                <span class="wo-summary-label">Total Volume</span>
-                <span class="wo-summary-val" id="woSummaryVolume">0 lbs</span>
-              </div>
-              <div class="wo-summary-item">
-                <span class="wo-summary-label">PRs Today</span>
-                <span class="wo-summary-val pr-highlight" id="woSummaryPRs">0</span>
-              </div>
-            </div>
+      <!-- Exercise Cards -->
+      <div id="woExerciseList" class="wo-exercise-list"></div>
 
-            <hr class="sep"/>
+      <!-- Add Exercise Button -->
+      <button class="btn btn-secondary wo-add-exercise-btn" id="woAddExerciseBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M12 5v14M5 12h14"/></svg>
+        Add Exercise
+      </button>
 
-            <!-- Volume by Muscle Group -->
-            <h3 class="section-sub-title">Volume by Muscle Group</h3>
-            <div id="woMuscleVolume" class="wo-muscle-bars"></div>
-            <div id="woMuscleEmpty" class="empty-state small">
-              <p>No data yet</p>
-            </div>
+      <!-- Workout Summary -->
+      <div class="card wo-summary-card hidden" id="woSummaryCard">
+        <h3>Workout Summary</h3>
+        <div class="wo-summary-stats">
+          <div class="wo-stat"><span class="wo-stat-val" id="woSumExercises">0</span><span class="wo-stat-lbl">Exercises</span></div>
+          <div class="wo-stat"><span class="wo-stat-val" id="woSumSets">0</span><span class="wo-stat-lbl">Sets</span></div>
+          <div class="wo-stat"><span class="wo-stat-val" id="woSumVolume">0</span><span class="wo-stat-lbl">Volume (lbs)</span></div>
+          <div class="wo-stat"><span class="wo-stat-val" id="woSumDuration">0:00</span><span class="wo-stat-lbl">Duration</span></div>
+        </div>
+      </div>
 
-            <hr class="sep"/>
-
-            <!-- Recent PRs -->
-            <h3 class="section-sub-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
-              </svg>
-              Recent Personal Records
-            </h3>
-            <div id="woPRList" class="wo-pr-list"></div>
-            <div id="woPREmpty" class="empty-state small">
-              <p>No PRs recorded yet</p>
-              <span>Start logging workouts to track your records</span>
-            </div>
-          </div>
-        </section>
-      </main>
+      <!-- Rest Day Empty State -->
+      <div class="wo-rest-state hidden" id="woRestState">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        <h3>Rest Day</h3>
+        <p>No workout scheduled. Take it easy and recover!</p>
+        <p class="muted">You can still add exercises if you want to train today.</p>
+      </div>
     </div>
 
-    <!-- ============================================================ -->
-    <!-- STATS VIEW -->
-    <!-- ============================================================ -->
+    <!-- Stats View -->
     <div id="statsView" class="hidden">
       <div class="stats-header">
-        <button class="btn" id="closeStatsBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
-          </svg>
-          Back
-        </button>
+        <button class="btn" id="closeStatsBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Back to Tracker</button>
         <h2>Analytics Dashboard</h2>
-        <div class="stats-tab-toggle">
-          <button class="stats-toggle-btn active" data-stats-tab="nutrition-stats">Nutrition</button>
-          <button class="stats-toggle-btn" data-stats-tab="workout-stats">Workout</button>
-        </div>
-        <button class="btn btn-sm" id="exportDataBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-          </svg>
-          Export CSV
-        </button>
+        <button class="btn btn-sm" id="exportDataBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Export CSV</button>
       </div>
-      
-      <!-- Nutrition Stats -->
-      <div id="nutrition-stats">
-        <div class="grid grid-2">
-          <div class="card">
-            <div class="card-header">
-              <h3>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                  <line x1="16" y1="2" x2="16" y2="6"/>
-                  <line x1="8" y1="2" x2="8" y2="6"/>
-                  <line x1="3" y1="10" x2="21" y2="10"/>
-                </svg>
-                Weekly Summary (Last 7 Days)
-              </h3>
-            </div>
-            <div class="table-responsive">
-              <table class="stats-table" id="weeklyTable">
-                <thead>
-                  <tr><th>Day</th><th>Cal</th><th>Pro</th><th>Carb</th><th>Fat</th><th>Wt</th><th>Steps</th></tr>
-                </thead>
-                <tbody></tbody>
-                <tfoot>
-                  <tr id="weeklyAvgRow"><td>Avg</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header">
-              <h3>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                  <line x1="12" y1="20" x2="12" y2="10"/>
-                  <line x1="18" y1="20" x2="18" y2="4"/>
-                  <line x1="6" y1="20" x2="6" y2="16"/>
-                </svg>
-                Monthly Overview
-              </h3>
-            </div>
-            <div class="table-responsive">
-              <table class="stats-table" id="monthlyTable">
-                <thead>
-                  <tr><th>Week Starting</th><th>Avg Cal</th><th>Avg Pro</th><th>Avg Wt</th><th>Total Steps</th></tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header">
-              <h3>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                </svg>
-                Weight Trend (30 Days)
-              </h3>
-            </div>
-            <div class="chart-area" id="weightChart"></div>
-          </div>
-
-          <div class="card">
-            <div class="card-header">
-              <h3>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                  <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
-                  <polyline points="22 4 12 14.01 9 11.01"/>
-                </svg>
-                Goal Adherence (Last 7 Days)
-              </h3>
-            </div>
-            <div class="adherence-grid" id="adherenceGrid"></div>
-          </div>
+      <div class="grid grid-2">
+        <div class="card"><div class="card-header"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Weekly Summary (Last 7 Days)</h3></div>
+          <div class="table-responsive"><table class="stats-table" id="weeklyTable"><thead><tr><th>Day</th><th>Cal</th><th>Pro</th><th>Carb</th><th>Fat</th><th>Wt</th><th>Steps</th></tr></thead><tbody></tbody><tfoot><tr id="weeklyAvgRow"><td>Avg</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr></tfoot></table></div>
         </div>
-      </div>
-
-      <!-- Workout Stats -->
-      <div id="workout-stats" class="hidden">
-        <div class="grid grid-2">
-          <div class="card">
-            <div class="card-header">
-              <h3>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                  <path d="M18 20V10M12 20V4M6 20v-6"/>
-                </svg>
-                Monthly Exercise Progress
-              </h3>
-              <select id="statsExerciseSelect" class="wo-select-sm">
-                <option value="">Select exercise...</option>
-              </select>
-            </div>
-            <div id="exerciseProgressChart" class="chart-area"></div>
-            <div id="exerciseProgressEmpty" class="empty-state small">
-              <p>Select an exercise to view progress</p>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header">
-              <h3>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                  <line x1="16" y1="2" x2="16" y2="6"/>
-                  <line x1="8" y1="2" x2="8" y2="6"/>
-                  <line x1="3" y1="10" x2="21" y2="10"/>
-                </svg>
-                Weekly Workout Summary
-              </h3>
-            </div>
-            <div class="table-responsive">
-              <table class="stats-table" id="woWeeklyTable">
-                <thead>
-                  <tr><th>Day</th><th>Exercises</th><th>Sets</th><th>Volume</th><th>Duration</th></tr>
-                </thead>
-                <tbody></tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header">
-              <h3>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                  <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
-                </svg>
-                All Personal Records
-              </h3>
-            </div>
-            <div id="allPRsList" class="wo-pr-list"></div>
-            <div id="allPRsEmpty" class="empty-state small">
-              <p>No PRs recorded yet</p>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header">
-              <h3>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                  <path d="M18 20V10M12 20V4M6 20v-6"/>
-                </svg>
-                Monthly Volume by Muscle Group
-              </h3>
-            </div>
-            <div id="monthlyMuscleChart" class="wo-muscle-bars large"></div>
-          </div>
+        <div class="card"><div class="card-header"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>Monthly Overview</h3></div>
+          <div class="table-responsive"><table class="stats-table" id="monthlyTable"><thead><tr><th>Week Starting</th><th>Avg Cal</th><th>Avg Pro</th><th>Avg Wt</th><th>Total Steps</th></tr></thead><tbody></tbody></table></div>
         </div>
+        <div class="card"><div class="card-header"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Weight Trend (30 Days)</h3></div><div class="chart-area" id="weightChart"></div></div>
+        <div class="card"><div class="card-header"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Goal Adherence (Last 7 Days)</h3></div><div class="adherence-grid" id="adherenceGrid"></div></div>
       </div>
     </div>
 
@@ -786,226 +374,108 @@
     </footer>
   </div>
 
-  <!-- ============================================================ -->
-  <!-- SETTINGS MODAL -->
-  <!-- ============================================================ -->
+  <!-- Settings Modal -->
   <dialog id="settingsModal" class="modal">
     <div class="modal-content large-modal">
       <div class="modal-header">
-        <h2>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
-          </svg>
-          Settings
-        </h2>
-        <button class="btn-close" id="closeSettingsBtn" aria-label="Close settings">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings</h2>
+        <button class="btn-close" id="closeSettingsBtn" aria-label="Close settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
-      
       <!-- Settings Tabs -->
       <div class="settings-tabs">
-        <button class="settings-tab-btn active" data-settings-tab="general-settings">General</button>
-        <button class="settings-tab-btn" data-settings-tab="food-settings">Food Library</button>
-        <button class="settings-tab-btn" data-settings-tab="workout-schedule-settings">Workout Schedule</button>
+        <button class="settings-tab-btn active" data-stab="general">General</button>
+        <button class="settings-tab-btn" data-stab="library">Food Library</button>
+        <button class="settings-tab-btn" data-stab="schedule">Workout Schedule</button>
       </div>
-
-      <!-- General Settings Tab -->
-      <div id="general-settings" class="settings-tab-content">
+      <!-- General Tab -->
+      <div class="settings-tab-content" id="stab-general">
         <div class="settings-section">
           <h3>Daily Targets</h3>
           <div class="form">
             <div class="responsive-row targets-row">
-              <div class="target-input">
-                <label>Calories</label>
-                <input id="targetCalories" type="number" />
-                <span class="unit">kcal</span>
-              </div>
-              <div class="target-input">
-                <label>Protein</label>
-                <input id="targetProtein" type="number" />
-                <span class="unit">g</span>
-              </div>
-              <div class="target-input">
-                <label>Carbs</label>
-                <input id="targetCarbs" type="number" />
-                <span class="unit">g</span>
-              </div>
-              <div class="target-input">
-                <label>Fat</label>
-                <input id="targetFat" type="number" />
-                <span class="unit">g</span>
-              </div>
+              <div class="target-input"><label>Calories</label><input id="targetCalories" type="number" /><span class="unit">kcal</span></div>
+              <div class="target-input"><label>Protein</label><input id="targetProtein" type="number" /><span class="unit">g</span></div>
+              <div class="target-input"><label>Carbs</label><input id="targetCarbs" type="number" /><span class="unit">g</span></div>
+              <div class="target-input"><label>Fat</label><input id="targetFat" type="number" /><span class="unit">g</span></div>
             </div>
             <button class="btn btn-primary" id="saveTargetsBtn">Update Targets</button>
           </div>
         </div>
-
         <hr class="sep" />
-
         <div class="settings-section">
           <h3>Preferences</h3>
           <div class="form">
-            <div class="preference-row">
-              <label for="tzSelect">Time Zone</label>
-              <select id="tzSelect">
-                <option value="local">Device Time (Auto)</option>
-                <option value="-5">Eastern (UTC-5)</option>
-                <option value="-6">Central (UTC-6)</option>
-                <option value="-7">Mountain (UTC-7)</option>
-                <option value="-8">Pacific (UTC-8)</option>
-                <option value="0">UTC</option>
-              </select>
+            <div class="preference-row"><label for="tzSelect">Time Zone</label>
+              <select id="tzSelect"><option value="local">Device Time (Auto)</option><option value="-5">Eastern (UTC-5)</option><option value="-6">Central (UTC-6)</option><option value="-7">Mountain (UTC-7)</option><option value="-8">Pacific (UTC-8)</option><option value="0">UTC</option></select>
             </div>
-            <div class="preference-row">
-              <label for="restTimerSelect">Default Rest Timer</label>
-              <select id="restTimerSelect">
-                <option value="30">30 seconds</option>
-                <option value="60" selected>60 seconds</option>
-                <option value="90">90 seconds</option>
-                <option value="120">2 minutes</option>
-                <option value="180">3 minutes</option>
-                <option value="300">5 minutes</option>
-              </select>
+            <p class="hint">Controls when the day resets for logging.</p>
+            <div class="preference-row"><label for="restTimerSelect">Default Rest Timer</label>
+              <select id="restTimerSelect"><option value="30">30 seconds</option><option value="60" selected>1 minute</option><option value="90">1.5 minutes</option><option value="120">2 minutes</option><option value="180">3 minutes</option><option value="300">5 minutes</option></select>
             </div>
           </div>
         </div>
-
         <hr class="sep" />
-
         <div class="settings-section">
           <h3>Tools</h3>
           <div class="tools-row">
-            <button class="btn" id="btnImportDefaults">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
-              </svg>
-              Import Default Meal Library
-            </button>
+            <button class="btn" id="btnImportDefaults"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>Import Default Library</button>
             <span id="importStatus" class="status-text"></span>
           </div>
         </div>
       </div>
-
-      <!-- Food Library Settings Tab -->
-      <div id="food-settings" class="settings-tab-content hidden">
+      <!-- Food Library Tab -->
+      <div class="settings-tab-content hidden" id="stab-library">
         <div class="settings-section">
           <h3>Food Library</h3>
           <div class="library-controls">
-            <div class="search-input-wrapper">
-              <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-              </svg>
-              <input id="libSearch" type="search" placeholder="Search saved foods..." />
-            </div>
-            <button class="btn btn-primary btn-sm" id="btnAddLibItem">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                <path d="M12 5v14M5 12h14"/>
-              </svg>
-              Add New
-            </button>
+            <div class="search-input-wrapper"><svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input id="libSearch" type="search" placeholder="Search saved foods..." /></div>
+            <button class="btn btn-primary btn-sm" id="btnAddLibItem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 5v14M5 12h14"/></svg>Add New</button>
           </div>
           <div id="libraryList" class="library-list-container"></div>
         </div>
       </div>
-
-      <!-- Workout Schedule Settings Tab -->
-      <div id="workout-schedule-settings" class="settings-tab-content hidden">
+      <!-- Workout Schedule Tab -->
+      <div class="settings-tab-content hidden" id="stab-schedule">
         <div class="settings-section">
-          <h3>Workout Schedule</h3>
-          <p class="hint">Define your weekly workout plan. Changes are saved automatically.</p>
-          
-          <div class="wo-schedule-editor">
-            <!-- Day selector -->
-            <div class="wo-day-tabs" id="woScheduleDayTabs">
-              <button class="wo-day-tab" data-day="Monday">Mon</button>
-              <button class="wo-day-tab active" data-day="Tuesday">Tue</button>
-              <button class="wo-day-tab" data-day="Wednesday">Wed</button>
-              <button class="wo-day-tab" data-day="Thursday">Thu</button>
-              <button class="wo-day-tab" data-day="Friday">Fri</button>
-              <button class="wo-day-tab" data-day="Saturday">Sat</button>
-              <button class="wo-day-tab" data-day="Sunday">Sun</button>
+          <h3>Weekly Workout Schedule</h3>
+          <p class="hint">Define your standard weekly routine. Each day auto-populates in the Workout view. You can edit individual days from the workout view without affecting this template.</p>
+          <div class="schedule-day-tabs" id="scheduleDayTabs">
+            <button class="sched-day-btn active" data-day="Monday">Mon</button>
+            <button class="sched-day-btn" data-day="Tuesday">Tue</button>
+            <button class="sched-day-btn" data-day="Wednesday">Wed</button>
+            <button class="sched-day-btn" data-day="Thursday">Thu</button>
+            <button class="sched-day-btn" data-day="Friday">Fri</button>
+            <button class="sched-day-btn" data-day="Saturday">Sat</button>
+            <button class="sched-day-btn" data-day="Sunday">Sun</button>
+          </div>
+          <div class="schedule-day-editor" id="scheduleDayEditor">
+            <div class="sched-day-top">
+              <div class="input-group-inline"><label>Workout Title</label><input id="schedTitle" type="text" placeholder="e.g. UPPER 1, LEG DAY" /></div>
+              <div class="input-group-inline"><label>Focus Areas</label><input id="schedFocus" type="text" placeholder="e.g. Chest, Shoulders, Triceps" /></div>
+              <label class="toggle-label"><input type="checkbox" id="schedRestDay" /><span>Rest Day</span></label>
             </div>
-
-            <!-- Day config -->
-            <div class="wo-day-config">
-              <div class="form-row cols-2">
-                <div class="input-group-inline">
-                  <label>Day Title</label>
-                  <input id="woScheduleTitle" type="text" placeholder="e.g. UPPER 1" />
-                </div>
-                <div class="input-group-inline">
-                  <label>Focus Areas</label>
-                  <input id="woScheduleFocus" type="text" placeholder="e.g. Chest, Back, Shoulders" />
-                </div>
-              </div>
-              <div class="wo-schedule-check">
-                <label class="checkbox-label">
-                  <input type="checkbox" id="woScheduleRestDay" />
-                  <span>Rest Day</span>
-                </label>
-              </div>
-            </div>
-
-            <!-- Exercise list editor -->
-            <div id="woScheduleExercises" class="wo-schedule-exercises"></div>
-            
-            <button class="btn btn-sm btn-secondary" id="woAddScheduleExercise">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                <path d="M12 5v14M5 12h14"/>
-              </svg>
-              Add Exercise to Schedule
-            </button>
+            <div id="schedExerciseList" class="sched-exercise-list"></div>
+            <button class="btn btn-sm" id="schedAddExercise"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M12 5v14M5 12h14"/></svg>Add Exercise</button>
+            <div class="sched-actions"><button class="btn btn-primary" id="schedSaveBtn">Save Schedule</button></div>
           </div>
         </div>
       </div>
     </div>
   </dialog>
 
-  <!-- ============================================================ -->
-  <!-- MODALS -->
-  <!-- ============================================================ -->
-
-  <!-- Edit Meal Entry Modal -->
+  <!-- Edit Entry Modal -->
   <dialog id="editModal" class="modal">
     <div class="modal-content">
-      <h3>Edit Log Entry</h3>
+      <div class="modal-header"><h2>Edit Entry</h2><button class="btn-close" id="closeEditBtn" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
       <div class="form">
-        <div class="input-group-inline">
-          <label>Name</label>
-          <input id="editName" type="text" />
+        <div class="input-group-inline"><label>Name</label><input id="editName" type="text" /></div>
+        <div class="form-row cols-4 macro-inputs">
+          <div class="input-group-inline"><label>Cal</label><input id="editCalories" type="number" /></div>
+          <div class="input-group-inline"><label>Protein</label><input id="editProtein" type="number" /></div>
+          <div class="input-group-inline"><label>Carbs</label><input id="editCarbs" type="number" /></div>
+          <div class="input-group-inline"><label>Fat</label><input id="editFat" type="number" /></div>
         </div>
-        <div class="form-row cols-2">
-          <div class="input-group-inline">
-            <label>Servings</label>
-            <input id="editServings" type="number" step="0.25" />
-          </div>
-          <div class="input-group-inline">
-            <label>Calories</label>
-            <input id="editCalories" type="number" />
-          </div>
-        </div>
-        <div class="form-row cols-3">
-          <div class="input-group-inline">
-            <label>Protein</label>
-            <input id="editP" type="number" />
-          </div>
-          <div class="input-group-inline">
-            <label>Carbs</label>
-            <input id="editC" type="number" />
-          </div>
-          <div class="input-group-inline">
-            <label>Fat</label>
-            <input id="editF" type="number" />
-          </div>
-        </div>
-      </div>
-      <div class="modal-actions">
-        <button class="btn" id="closeEditBtn">Cancel</button>
+        <div class="form-row cols-2"><div class="input-group-inline"><label>Servings</label><input id="editServings" type="number" min="0" step="0.25" value="1" /></div></div>
         <button class="btn btn-primary" id="saveEditBtn">Save Changes</button>
       </div>
     </div>
@@ -1014,172 +484,78 @@
   <!-- Edit Library Item Modal -->
   <dialog id="editLibModal" class="modal">
     <div class="modal-content">
-      <h3 id="libModalTitle">Edit Saved Meal</h3>
+      <div class="modal-header"><h2>Edit Library Item</h2><button class="btn-close" id="closeEditLibBtn" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
       <div class="form">
-        <button type="button" class="btn btn-scan btn-scan-sm" id="scanLibLabelBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
-            <circle cx="12" cy="13" r="4"/>
-          </svg>
-          Scan Label
-        </button>
-        <div class="input-group-inline">
-          <label>Name</label>
-          <input id="libName" type="text" placeholder="e.g. Oatmeal" />
+        <div class="input-group-inline"><label>Name</label><input id="editLibName" type="text" /></div>
+        <div class="form-row cols-4 macro-inputs">
+          <div class="input-group-inline"><label>Cal</label><input id="editLibCalories" type="number" /></div>
+          <div class="input-group-inline"><label>Protein</label><input id="editLibProtein" type="number" /></div>
+          <div class="input-group-inline"><label>Carbs</label><input id="editLibCarbs" type="number" /></div>
+          <div class="input-group-inline"><label>Fat</label><input id="editLibFat" type="number" /></div>
         </div>
-        <div class="form-row cols-2">
-          <div class="input-group-inline">
-            <label>Calories</label>
-            <input id="libCal" type="number" placeholder="0" />
-          </div>
-          <div class="input-group-inline">
-            <label>Protein</label>
-            <input id="libPro" type="number" placeholder="0" />
-          </div>
-          <div class="input-group-inline">
-            <label>Carbs</label>
-            <input id="libCarb" type="number" placeholder="0" />
-          </div>
-          <div class="input-group-inline">
-            <label>Fat</label>
-            <input id="libFat" type="number" placeholder="0" />
-          </div>
-        </div>
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-danger" id="deleteLibBtn">Delete</button>
-        <div class="spacer"></div>
-        <button class="btn" id="closeLibBtn">Cancel</button>
-        <button class="btn btn-primary" id="saveLibBtn">Save</button>
+        <div class="button-row"><button class="btn btn-primary" id="saveEditLibBtn">Save</button><button class="btn btn-danger" id="deleteEditLibBtn">Delete</button></div>
       </div>
     </div>
   </dialog>
 
-  <!-- Add Exercise Modal (for ad-hoc exercises during workout) -->
+  <!-- Add Exercise Modal -->
   <dialog id="addExerciseModal" class="modal">
     <div class="modal-content">
-      <h3>Add Exercise</h3>
+      <div class="modal-header"><h2>Add Exercise</h2><button class="btn-close" id="closeAddExerciseBtn" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
       <div class="form">
-        <div class="input-group-inline">
-          <label>Exercise Name</label>
-          <input id="addExName" type="text" placeholder="e.g. Lat Pulldown" />
-        </div>
+        <div class="input-group-inline"><label>Exercise Name</label><input id="addExName" type="text" placeholder="e.g. Bench Press" /></div>
         <div class="form-row cols-3">
-          <div class="input-group-inline">
-            <label>Sets</label>
-            <input id="addExSets" type="number" placeholder="3" value="3" />
-          </div>
-          <div class="input-group-inline">
-            <label>Target Reps</label>
-            <input id="addExReps" type="text" placeholder="8-12" />
-          </div>
-          <div class="input-group-inline">
-            <label>Body Part</label>
-            <input id="addExBody" type="text" placeholder="e.g. Back" />
-          </div>
+          <div class="input-group-inline"><label>Sets</label><input id="addExSets" type="number" min="1" value="3" /></div>
+          <div class="input-group-inline"><label>Target Reps</label><input id="addExReps" type="text" placeholder="e.g. 8-12" /></div>
+          <div class="input-group-inline"><label>Body Part</label><input id="addExBodyPart" type="text" placeholder="e.g. Chest" /></div>
         </div>
-        <div class="input-group-inline">
-          <label>Notes (optional)</label>
-          <input id="addExNotes" type="text" placeholder="e.g. superset with curls" />
-        </div>
-      </div>
-      <div class="modal-actions">
-        <button class="btn" id="cancelAddExBtn">Cancel</button>
-        <button class="btn btn-primary" id="confirmAddExBtn">Add Exercise</button>
+        <div class="input-group-inline"><label>Notes</label><textarea id="addExNotes" placeholder="e.g. Superset with curls, focus on form, etc." rows="2"></textarea></div>
+        <button class="btn btn-primary" id="addExSubmitBtn">Add to Workout</button>
       </div>
     </div>
   </dialog>
 
-  <!-- Toast Notification -->
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-
-  <!-- Camera Scanner Modal -->
+  <!-- Scanner Modal -->
   <dialog id="scannerModal" class="modal scanner-modal">
     <div class="modal-content scanner-content">
-      <div class="modal-header">
-        <h3>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
-            <circle cx="12" cy="13" r="4"/>
-          </svg>
-          Scan Nutrition Label
-        </h3>
-        <button class="btn-close" id="closeScannerBtn" aria-label="Close scanner">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
+      <div class="modal-header"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>Scan Nutrition Label</h2>
+        <button class="btn-close" id="closeScannerBtn" aria-label="Close scanner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
-      <div class="scanner-body">
-        <div class="camera-container" id="cameraContainer">
-          <video id="cameraVideo" autoplay playsinline></video>
-          <div class="camera-overlay">
-            <div class="scan-frame"></div>
-            <p>Position nutrition label within frame</p>
-          </div>
-        </div>
-        <div class="preview-container hidden" id="previewContainer">
-          <img id="previewImage" alt="Captured image" />
-          <div class="preview-overlay" id="previewOverlay">
-            <div class="scanning-indicator">
-              <div class="scan-spinner"></div>
-              <span>Analyzing nutrition label...</span>
-            </div>
-          </div>
-        </div>
-        <div class="scan-results hidden" id="scanResults">
-          <h4>Detected Values</h4>
-          <div class="result-grid">
-            <div class="result-item">
-              <label>Calories</label>
-              <input type="number" id="scanCalories" />
-            </div>
-            <div class="result-item">
-              <label>Protein</label>
-              <input type="number" id="scanProtein" />
-            </div>
-            <div class="result-item">
-              <label>Carbs</label>
-              <input type="number" id="scanCarbs" />
-            </div>
-            <div class="result-item">
-              <label>Fat</label>
-              <input type="number" id="scanFat" />
-            </div>
-          </div>
-          <p class="scan-hint">Review and adjust values if needed</p>
-        </div>
-        <div class="scan-error hidden" id="scanError">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          <p id="scanErrorMsg">Could not read nutrition label</p>
-          <button class="btn" id="retryScnBtn">Try Again</button>
+      <div class="scanner-steps">
+        <div class="scanner-step active" data-step="capture"><span class="step-num">1</span><span>Capture</span></div>
+        <div class="scanner-step" data-step="process"><span class="step-num">2</span><span>Process</span></div>
+        <div class="scanner-step" data-step="review"><span class="step-num">3</span><span>Review</span></div>
+      </div>
+      <div id="scanCapture" class="scan-view">
+        <div class="camera-container"><video id="cameraFeed" autoplay playsinline></video><canvas id="captureCanvas" style="display:none"></canvas><div class="camera-overlay"><div class="scan-frame"></div></div></div>
+        <div class="camera-controls">
+          <button class="btn btn-primary" id="captureBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>Capture</button>
+          <button class="btn" id="uploadScanBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>Upload Image</button>
+          <input type="file" id="scanFileInput" accept="image/*" style="display:none" />
         </div>
       </div>
-      <div class="scanner-actions">
-        <button class="btn" id="cancelScanBtn">Cancel</button>
-        <button class="btn btn-primary" id="captureBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-            <circle cx="12" cy="12" r="10"/>
-            <circle cx="12" cy="12" r="6" fill="currentColor"/>
-          </svg>
-          Capture
-        </button>
-        <button class="btn btn-primary hidden" id="useScanBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-          Use Values
-        </button>
+      <div id="scanProcess" class="scan-view hidden">
+        <div class="processing-indicator"><div class="spinner large"></div><p>Analyzing nutrition label...</p><p class="muted">This may take a few seconds</p></div>
+        <div id="capturedPreview" class="captured-preview"></div>
       </div>
-      <input type="file" id="fileInput" accept="image/*" capture="environment" class="hidden" />
+      <div id="scanReview" class="scan-view hidden">
+        <div class="scan-results">
+          <h3>Detected Values</h3><p class="muted">Review and adjust if needed before applying.</p>
+          <div class="scan-result-row"><label>Serving Size</label><input id="scanServingSize" type="text" placeholder="e.g. 1 cup (240g)" /></div>
+          <div class="form-row cols-4 macro-inputs">
+            <div class="input-group-inline"><label>Calories</label><input id="scanCalories" type="number" /></div>
+            <div class="input-group-inline"><label>Protein (g)</label><input id="scanProtein" type="number" /></div>
+            <div class="input-group-inline"><label>Carbs (g)</label><input id="scanCarbs" type="number" /></div>
+            <div class="input-group-inline"><label>Fat (g)</label><input id="scanFat" type="number" /></div>
+          </div>
+          <div id="scanRawText" class="scan-raw-text"></div>
+          <div class="scan-actions"><button class="btn btn-primary" id="applyScanBtn">Apply Values</button><button class="btn" id="retakeScanBtn">Retake</button></div>
+        </div>
+      </div>
     </div>
   </dialog>
 
+  <div class="toast" id="toast"></div>
   <script type="module" src="app.js"></script>
 </body>
 </html>

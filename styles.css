@@ -1960,17 +1960,17 @@ footer {
 }
 
 /* ============================================
-   WORKOUT TRACKER STYLES
+   WORKOUT TRACKING STYLES
    ============================================ */
 
-/* === MAIN NAV === */
+/* Main Navigation Tabs */
 .main-nav {
   display: flex;
   gap: 4px;
-  margin-bottom: 20px;
-  background: var(--bg-card);
-  border-radius: var(--radius);
+  background: var(--card);
+  border-radius: 12px;
   padding: 4px;
+  margin-bottom: 16px;
   border: 1px solid var(--border);
 }
 
@@ -1982,204 +1982,247 @@ footer {
   gap: 8px;
   padding: 10px 16px;
   border: none;
+  border-radius: 10px;
   background: transparent;
-  color: var(--text-muted);
-  font-family: var(--font-sans);
+  color: var(--muted);
+  font-family: inherit;
   font-size: 0.9rem;
   font-weight: 600;
-  border-radius: calc(var(--radius) - 2px);
   cursor: pointer;
-  transition: all var(--transition);
+  transition: all 0.2s;
 }
 
 .main-nav-btn:hover {
-  color: var(--text-secondary);
-  background: var(--bg-hover);
+  color: var(--text);
+  background: var(--hover);
 }
 
 .main-nav-btn.active {
-  background: var(--primary);
+  background: var(--accent);
   color: #fff;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
 }
 
-/* === SETTINGS TABS === */
+.main-nav-btn svg {
+  flex-shrink: 0;
+}
+
+/* Settings Tabs */
 .settings-tabs {
   display: flex;
   gap: 4px;
   margin-bottom: 20px;
-  background: var(--bg-input);
-  border-radius: var(--radius-sm);
-  padding: 3px;
+  padding: 4px;
+  background: var(--bg);
+  border-radius: 10px;
 }
 
 .settings-tab-btn {
   flex: 1;
   padding: 8px 12px;
   border: none;
+  border-radius: 8px;
   background: transparent;
-  color: var(--text-muted);
-  font-family: var(--font-sans);
-  font-size: 0.82rem;
-  font-weight: 600;
-  border-radius: calc(var(--radius-sm) - 1px);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all var(--transition);
+  transition: all 0.2s;
 }
 
 .settings-tab-btn:hover {
-  color: var(--text-secondary);
+  color: var(--text);
 }
 
 .settings-tab-btn.active {
-  background: var(--primary);
-  color: #fff;
+  background: var(--card);
+  color: var(--text);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 }
 
-.settings-tab-content.hidden {
-  display: none;
-}
-
-/* === STATS TAB TOGGLE === */
-.stats-tab-toggle {
-  display: flex;
-  gap: 4px;
-  background: var(--bg-input);
-  border-radius: var(--radius-sm);
-  padding: 3px;
-}
-
-.stats-toggle-btn {
-  padding: 6px 16px;
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  font-family: var(--font-sans);
-  font-size: 0.82rem;
-  font-weight: 600;
-  border-radius: calc(var(--radius-sm) - 1px);
-  cursor: pointer;
-  transition: all var(--transition);
-}
-
-.stats-toggle-btn:hover {
-  color: var(--text-secondary);
-}
-
-.stats-toggle-btn.active {
-  background: var(--primary);
-  color: #fff;
-}
-
-.stats-header {
+/* Quick Navigation Bar */
+.wo-quick-nav {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
+  padding: 8px 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 16px;
 }
 
-/* === WORKOUT TIMER BAR === */
+.wo-quick-nav-label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-align: center;
+  flex: 1;
+}
+
+/* Workout Day Header */
+.wo-day-header {
+  padding: 12px 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.wo-day-title h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.wo-day-focus {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 2px;
+  display: block;
+}
+
+/* Timer Bar */
 .wo-timer-bar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  padding: 10px 14px;
-  background: var(--bg-input);
-  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
   margin-bottom: 16px;
-  flex-wrap: wrap;
+}
+
+.wo-timer-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 70px;
 }
 
 .wo-duration {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-mono);
-  font-size: 0.9rem;
-  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text);
 }
 
-.wo-rest-timer {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 10px;
-  background: var(--warning);
-  border-radius: var(--radius-sm);
-  color: #000;
-  font-weight: 600;
-  font-size: 0.85rem;
-  animation: pulse-glow 1.5s ease-in-out infinite;
-}
-
-.wo-rest-timer.hidden { display: none; }
-
-@keyframes pulse-glow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.8; }
-}
-
-.rest-label {
-  font-size: 0.75rem;
+.wo-duration-label {
+  font-size: 0.7rem;
+  color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
 }
 
-.rest-time {
-  font-family: var(--font-mono);
-  font-size: 1rem;
-}
-
-.btn-xs-icon {
-  border: none;
-  background: rgba(0,0,0,0.2);
-  color: #000;
-  border-radius: 50%;
-  width: 22px;
-  height: 22px;
+.wo-timer-center {
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 0;
+  gap: 10px;
+  padding: 6px 14px;
+  background: rgba(245, 158, 11, 0.12);
+  border-radius: 8px;
+  animation: restPulse 1.5s ease-in-out infinite;
 }
 
-/* === WORKOUT EXERCISE LIST === */
+@keyframes restPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.wo-rest-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #f59e0b;
+  text-transform: uppercase;
+}
+
+.wo-rest-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f59e0b;
+}
+
+.wo-timer-right {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-finish {
+  background: #ef4444 !important;
+  color: white !important;
+}
+
+.btn-finish:hover {
+  background: #dc2626 !important;
+}
+
+/* Exercise List */
 .wo-exercise-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  margin-bottom: 16px;
 }
 
+/* Exercise Card */
 .wo-exercise-card {
-  background: var(--bg-input);
+  background: var(--card);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: 12px;
   overflow: hidden;
-  transition: all var(--transition);
+  transition: opacity 0.3s;
 }
 
 .wo-exercise-card.completed {
   opacity: 0.5;
-  border-color: var(--success);
-}
-
-.wo-exercise-card.completed .wo-ex-header {
-  background: rgba(16, 185, 129, 0.1);
 }
 
 .wo-ex-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  cursor: pointer;
   gap: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  user-select: none;
 }
 
 .wo-ex-header:hover {
-  background: var(--bg-hover);
+  background: var(--hover);
+}
+
+.wo-ex-check {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+}
+
+.wo-ex-check.checked {
+  background: var(--success);
+  border-color: var(--success);
+}
+
+.wo-ex-check svg {
+  width: 16px;
+  height: 16px;
+  stroke: white;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.wo-ex-check.checked svg {
+  opacity: 1;
 }
 
 .wo-ex-info {
@@ -2189,509 +2232,483 @@ footer {
 
 .wo-ex-name {
   font-weight: 600;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.wo-ex-name .superset-tag {
-  font-size: 0.68rem;
-  padding: 1px 6px;
-  background: var(--primary-glow);
-  color: var(--primary);
-  border-radius: 4px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  flex-wrap: wrap;
 }
 
 .wo-ex-meta {
   font-size: 0.78rem;
-  color: var(--text-muted);
+  color: var(--muted);
   margin-top: 2px;
 }
 
-.wo-ex-meta .target-reps {
-  color: var(--text-secondary);
+.wo-ex-badge {
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--accent);
 }
 
-.wo-ex-previous {
-  font-size: 0.72rem;
-  color: var(--accent-c);
-  margin-top: 2px;
+.wo-ex-prev {
+  font-size: 0.75rem;
+  color: var(--muted);
   font-style: italic;
 }
 
-.wo-ex-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.wo-ex-check {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 2px solid var(--border);
-  background: transparent;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: transparent;
-  transition: all var(--transition);
-  padding: 0;
+.wo-ex-toggle {
+  color: var(--muted);
+  transition: transform 0.2s;
   flex-shrink: 0;
 }
 
-.wo-ex-check.checked {
-  background: var(--success);
-  border-color: var(--success);
-  color: #fff;
+.wo-exercise-card.expanded .wo-ex-toggle {
+  transform: rotate(180deg);
 }
 
-.wo-ex-delete {
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
+/* Exercise Body (sets, notes) */
+.wo-ex-body {
+  display: none;
+  padding: 0 14px 14px;
+}
+
+.wo-exercise-card.expanded .wo-ex-body {
+  display: block;
+}
+
+/* Notes section in exercise card */
+.wo-ex-notes-section {
+  margin-bottom: 10px;
+}
+
+.wo-ex-notes-section textarea {
+  width: 100%;
+  min-height: 50px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.82rem;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.wo-ex-notes-section textarea:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.wo-ex-notes-section textarea::placeholder {
+  color: var(--muted);
+}
+
+.wo-ex-notes-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 4px;
   display: flex;
   align-items: center;
+  gap: 4px;
 }
 
-.wo-ex-delete:hover {
-  color: var(--danger);
-  background: rgba(239, 68, 68, 0.1);
+.wo-ex-notes-label svg {
+  width: 12px;
+  height: 12px;
 }
 
-/* Set rows */
-.wo-sets-container {
-  padding: 0 14px 10px;
-}
-
-.wo-sets-header {
-  display: grid;
-  grid-template-columns: 40px 1fr 1fr 1fr 40px;
-  gap: 8px;
-  padding: 6px 0;
+/* Persistent note indicator on collapsed cards */
+.wo-ex-note-indicator {
   font-size: 0.72rem;
+  color: var(--accent);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 250px;
+}
+
+.wo-ex-note-indicator svg {
+  width: 11px;
+  height: 11px;
+  vertical-align: -1px;
+  margin-right: 3px;
+}
+
+/* Set Table */
+.wo-set-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.wo-set-table th {
+  font-size: 0.7rem;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 1px solid var(--border-light);
-  margin-bottom: 4px;
+  letter-spacing: 0.05em;
+  padding: 4px 6px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
 }
 
-.wo-set-row {
-  display: grid;
-  grid-template-columns: 40px 1fr 1fr 1fr 40px;
-  gap: 8px;
-  padding: 4px 0;
-  align-items: center;
+.wo-set-table th:first-child {
+  text-align: left;
+  width: 36px;
 }
 
-.wo-set-row.completed-set {
-  opacity: 0.6;
-}
-
-.wo-set-num {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--text-muted);
+.wo-set-table td {
+  padding: 4px 4px;
   text-align: center;
 }
 
-.wo-set-input {
+.wo-set-table td:first-child {
+  text-align: left;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.wo-set-table input[type="number"],
+.wo-set-table input[type="text"] {
   width: 100%;
-  padding: 6px 8px;
+  padding: 6px 4px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-card);
+  border-radius: 6px;
+  background: var(--bg);
   color: var(--text);
-  font-family: var(--font-mono);
+  font-family: 'JetBrains Mono', monospace;
   font-size: 0.85rem;
   text-align: center;
 }
 
-.wo-set-input:focus {
-  border-color: var(--primary);
+.wo-set-table input:focus {
+  border-color: var(--accent);
   outline: none;
 }
 
-.wo-set-input::placeholder {
-  color: var(--text-muted);
-  font-size: 0.75rem;
-}
-
+/* Set completion checkbox */
 .wo-set-check {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   border: 2px solid var(--border);
-  background: transparent;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: transparent;
-  transition: all var(--transition);
-  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
   margin: 0 auto;
 }
 
 .wo-set-check.checked {
   background: var(--success);
   border-color: var(--success);
-  color: #fff;
 }
 
-.wo-set-check.pr-set {
-  border-color: var(--warning);
+.wo-set-check.pr {
+  background: #f59e0b;
+  border-color: #f59e0b;
 }
 
-.wo-set-check.pr-set.checked {
-  background: var(--warning);
-  border-color: var(--warning);
+.wo-set-check svg {
+  width: 14px;
+  height: 14px;
+  stroke: white;
+  opacity: 0;
+}
+
+.wo-set-check.checked svg,
+.wo-set-check.pr svg {
+  opacity: 1;
+}
+
+/* Add Set Row */
+.wo-add-set-row {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 4px;
 }
 
 .wo-add-set-btn {
-  width: 100%;
-  padding: 6px;
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
   font-size: 0.78rem;
-  font-family: var(--font-sans);
-  margin-top: 4px;
-  transition: all var(--transition);
+  padding: 4px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
 }
 
 .wo-add-set-btn:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: var(--primary-glow);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
-/* === WORKOUT SUMMARY === */
-.wo-summary-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.wo-summary-item {
-  background: var(--bg-input);
+/* Add Exercise Button */
+.wo-add-exercise-btn {
+  width: 100%;
   padding: 12px;
-  border-radius: var(--radius-sm);
-  text-align: center;
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  margin-bottom: 16px;
 }
 
-.wo-summary-label {
-  display: block;
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 4px;
-}
-
-.wo-summary-val {
-  display: block;
-  font-size: 1.3rem;
-  font-weight: 700;
-  font-family: var(--font-mono);
-  color: var(--text);
-}
-
-.pr-highlight {
-  color: var(--warning) !important;
-}
-
-/* === MUSCLE VOLUME BARS === */
-.wo-muscle-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 8px 0;
-}
-
-.wo-muscle-bars.large .wo-muscle-bar-row .wo-muscle-bar-track {
-  height: 18px;
-}
-
-.wo-muscle-bar-row {
-  display: grid;
-  grid-template-columns: 100px 1fr 60px;
-  gap: 8px;
-  align-items: center;
-  font-size: 0.8rem;
-}
-
-.wo-muscle-bar-label {
-  color: var(--text-secondary);
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.wo-muscle-bar-track {
-  height: 12px;
-  background: var(--border-light);
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.wo-muscle-bar-fill {
-  height: 100%;
-  border-radius: 6px;
-  background: var(--accent-p);
-  transition: width 0.5s ease;
-  min-width: 2px;
-}
-
-.wo-muscle-bar-val {
-  text-align: right;
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  color: var(--text-muted);
-}
-
-/* === PR LIST === */
-.wo-pr-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.wo-pr-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  background: var(--bg-input);
-  border-radius: var(--radius-sm);
-  border-left: 3px solid var(--warning);
-}
-
-.wo-pr-icon {
-  color: var(--warning);
+/* Remove exercise button */
+.wo-remove-ex-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.2s;
   flex-shrink: 0;
 }
 
-.wo-pr-info {
-  flex: 1;
-  min-width: 0;
+.wo-remove-ex-btn:hover {
+  color: #ef4444;
 }
 
-.wo-pr-name {
-  font-weight: 600;
-  font-size: 0.85rem;
+/* Summary Card */
+.wo-summary-card {
+  margin-bottom: 16px;
 }
 
-.wo-pr-detail {
-  font-size: 0.75rem;
-  color: var(--text-muted);
+.wo-summary-card h3 {
+  margin-bottom: 12px;
 }
 
-.wo-pr-date {
+.wo-summary-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.wo-stat {
+  text-align: center;
+  padding: 12px 8px;
+  background: var(--bg);
+  border-radius: 10px;
+}
+
+.wo-stat-val {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.wo-stat-lbl {
   font-size: 0.72rem;
-  color: var(--text-muted);
-  white-space: nowrap;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
-/* === SCHEDULE EDITOR === */
-.wo-schedule-editor {
-  margin-top: 12px;
+/* Rest Day State */
+.wo-rest-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--muted);
 }
 
-.wo-day-tabs {
+.wo-rest-state svg {
+  margin-bottom: 16px;
+  opacity: 0.4;
+}
+
+.wo-rest-state h3 {
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.wo-rest-state p {
+  font-size: 0.9rem;
+  margin: 4px 0;
+}
+
+/* Schedule Editor */
+.schedule-day-tabs {
   display: flex;
   gap: 4px;
   margin-bottom: 16px;
   flex-wrap: wrap;
 }
 
-.wo-day-tab {
+.sched-day-btn {
   padding: 6px 12px;
   border: 1px solid var(--border);
+  border-radius: 8px;
   background: transparent;
-  color: var(--text-muted);
-  font-family: var(--font-sans);
-  font-size: 0.8rem;
-  font-weight: 600;
-  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all var(--transition);
+  transition: all 0.2s;
 }
 
-.wo-day-tab:hover {
-  border-color: var(--primary);
-  color: var(--text-secondary);
+.sched-day-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
 }
 
-.wo-day-tab.active {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: #fff;
+.sched-day-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
 }
 
-.wo-day-tab.has-exercises {
+.sched-day-btn.has-exercises {
   border-color: var(--success);
-  color: var(--success);
+  position: relative;
 }
 
-.wo-day-tab.has-exercises.active {
-  background: var(--primary);
-  color: #fff;
+.sched-day-btn.has-exercises::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background: var(--success);
+  border-radius: 50%;
 }
 
-.wo-day-config {
+.schedule-day-editor {
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.sched-day-top {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
   margin-bottom: 16px;
+  align-items: flex-end;
 }
 
-.wo-schedule-check {
-  margin-top: 8px;
+.sched-day-top .input-group-inline {
+  flex: 1;
+  min-width: 180px;
 }
 
-.checkbox-label {
+.toggle-label {
   display: flex;
   align-items: center;
   gap: 8px;
-  cursor: pointer;
+  padding: 8px 0;
   font-size: 0.85rem;
-  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
 }
 
-.checkbox-label input[type="checkbox"] {
+.toggle-label input[type="checkbox"] {
   width: 18px;
   height: 18px;
-  cursor: pointer;
-  accent-color: var(--primary);
+  accent-color: var(--accent);
 }
 
-.wo-schedule-exercises {
+.sched-exercise-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
   margin-bottom: 12px;
 }
 
-.wo-sched-ex-row {
+.sched-exercise-row {
   display: grid;
-  grid-template-columns: 1fr 80px 80px 100px 32px;
+  grid-template-columns: 1fr 60px 80px 1fr 32px;
   gap: 8px;
   align-items: center;
   padding: 8px;
-  background: var(--bg-input);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-light);
+  background: var(--card);
+  border-radius: 8px;
+  border: 1px solid var(--border);
 }
 
-.wo-sched-ex-row input, .wo-sched-ex-row select {
+.sched-exercise-row input {
   padding: 6px 8px;
   border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--bg-card);
+  border-radius: 6px;
+  background: var(--bg);
   color: var(--text);
-  font-family: var(--font-sans);
+  font-family: inherit;
   font-size: 0.82rem;
 }
 
-.wo-sched-ex-row input:focus {
-  border-color: var(--primary);
+.sched-exercise-row input:focus {
+  border-color: var(--accent);
   outline: none;
 }
 
-.wo-sched-remove {
+.sched-remove-btn {
   width: 28px;
   height: 28px;
   border: none;
+  border-radius: 6px;
   background: transparent;
-  color: var(--text-muted);
+  color: var(--muted);
   cursor: pointer;
-  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  transition: all 0.2s;
 }
 
-.wo-sched-remove:hover {
-  color: var(--danger);
+.sched-remove-btn:hover {
   background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
 }
 
-/* === SECTION SUBTITLE === */
-.section-sub-title {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  margin: 8px 0;
+.sched-actions {
+  margin-top: 16px;
   display: flex;
-  align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
-/* === WORKOUT HEADER ACTIONS === */
-.wo-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+/* Form row cols-3 */
+.form-row.cols-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
 }
 
-.wo-completion {
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--primary);
-  background: var(--primary-glow);
-  padding: 3px 10px;
-  border-radius: var(--radius-sm);
-}
-
-/* === SELECT SMALL === */
-.wo-select-sm {
-  padding: 6px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg-input);
-  color: var(--text);
-  font-family: var(--font-sans);
-  font-size: 0.82rem;
-  max-width: 200px;
-}
-
-.wo-select-sm:focus {
-  border-color: var(--primary);
-  outline: none;
-}
-
-/* === RESPONSIVE TWEAKS === */
-@media (max-width: 768px) {
-  .main-nav-btn span { display: none; }
-  
-  .wo-sched-ex-row {
-    grid-template-columns: 1fr 60px 60px 80px 28px;
-    gap: 4px;
-    font-size: 0.78rem;
+/* Workout responsive */
+@media (max-width: 640px) {
+  .wo-summary-stats {
+    grid-template-columns: repeat(2, 1fr);
   }
   
-  .wo-sets-header,
-  .wo-set-row {
-    grid-template-columns: 32px 1fr 1fr 1fr 32px;
+  .wo-timer-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .sched-exercise-row {
+    grid-template-columns: 1fr;
     gap: 4px;
   }
   
-  .stats-header {
-    flex-direction: column;
-    align-items: flex-start;
+  .wo-quick-nav {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  
+  .main-nav-btn span {
+    display: inline;
   }
 }
