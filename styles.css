@@ -1967,7 +1967,7 @@ footer {
 .main-nav {
   display: flex;
   gap: 4px;
-  background: var(--card);
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 4px;
   margin-bottom: 16px;
@@ -1984,7 +1984,7 @@ footer {
   border: none;
   border-radius: 10px;
   background: transparent;
-  color: var(--muted);
+  color: var(--text-muted);
   font-family: inherit;
   font-size: 0.9rem;
   font-weight: 600;
@@ -1994,11 +1994,11 @@ footer {
 
 .main-nav-btn:hover {
   color: var(--text);
-  background: var(--hover);
+  background: var(--bg-hover);
 }
 
 .main-nav-btn.active {
-  background: var(--accent);
+  background: var(--primary);
   color: #fff;
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
 }
@@ -2023,7 +2023,7 @@ footer {
   border: none;
   border-radius: 8px;
   background: transparent;
-  color: var(--muted);
+  color: var(--text-muted);
   font-family: inherit;
   font-size: 0.85rem;
   font-weight: 500;
@@ -2036,7 +2036,7 @@ footer {
 }
 
 .settings-tab-btn.active {
-  background: var(--card);
+  background: var(--bg-card);
   color: var(--text);
   box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 }
@@ -2048,7 +2048,7 @@ footer {
   justify-content: space-between;
   gap: 12px;
   padding: 8px 12px;
-  background: var(--card);
+  background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 10px;
   margin-bottom: 16px;
@@ -2056,7 +2056,7 @@ footer {
 
 .wo-quick-nav-label {
   font-size: 0.8rem;
-  color: var(--muted);
+  color: var(--text-muted);
   text-align: center;
   flex: 1;
 }
@@ -2064,7 +2064,7 @@ footer {
 /* Workout Day Header */
 .wo-day-header {
   padding: 12px 16px;
-  background: var(--card);
+  background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 10px;
   margin-bottom: 12px;
@@ -2078,7 +2078,7 @@ footer {
 
 .wo-day-focus {
   font-size: 0.8rem;
-  color: var(--muted);
+  color: var(--text-muted);
   margin-top: 2px;
   display: block;
 }
@@ -2090,7 +2090,7 @@ footer {
   justify-content: space-between;
   gap: 12px;
   padding: 10px 16px;
-  background: var(--card);
+  background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 10px;
   margin-bottom: 16px;
@@ -2112,7 +2112,7 @@ footer {
 
 .wo-duration-label {
   font-size: 0.7rem;
-  color: var(--muted);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -2170,7 +2170,7 @@ footer {
 
 /* Exercise Card */
 .wo-exercise-card {
-  background: var(--card);
+  background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
@@ -2191,7 +2191,7 @@ footer {
 }
 
 .wo-ex-header:hover {
-  background: var(--hover);
+  background: var(--bg-hover);
 }
 
 .wo-ex-check {
@@ -2241,7 +2241,7 @@ footer {
 
 .wo-ex-meta {
   font-size: 0.78rem;
-  color: var(--muted);
+  color: var(--text-muted);
   margin-top: 2px;
 }
 
@@ -2252,17 +2252,17 @@ footer {
   font-weight: 700;
   text-transform: uppercase;
   background: rgba(99, 102, 241, 0.15);
-  color: var(--accent);
+  color: var(--primary);
 }
 
 .wo-ex-prev {
   font-size: 0.75rem;
-  color: var(--muted);
+  color: var(--text-muted);
   font-style: italic;
 }
 
 .wo-ex-toggle {
-  color: var(--muted);
+  color: var(--text-muted);
   transition: transform 0.2s;
   flex-shrink: 0;
 }
@@ -2301,18 +2301,18 @@ footer {
 }
 
 .wo-ex-notes-section textarea:focus {
-  border-color: var(--accent);
+  border-color: var(--primary);
   outline: none;
 }
 
 .wo-ex-notes-section textarea::placeholder {
-  color: var(--muted);
+  color: var(--text-muted);
 }
 
 .wo-ex-notes-label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--muted);
+  color: var(--text-muted);
   margin-bottom: 4px;
   display: flex;
   align-items: center;
@@ -2327,7 +2327,7 @@ footer {
 /* Persistent note indicator on collapsed cards */
 .wo-ex-note-indicator {
   font-size: 0.72rem;
-  color: var(--accent);
+  color: var(--primary);
   margin-top: 2px;
   white-space: nowrap;
   overflow: hidden;
@@ -2351,7 +2351,7 @@ footer {
 .wo-set-table th {
   font-size: 0.7rem;
   font-weight: 600;
-  color: var(--muted);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 4px 6px;
@@ -2373,7 +2373,7 @@ footer {
   text-align: left;
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--muted);
+  color: var(--text-muted);
 }
 
 .wo-set-table input[type="number"],
@@ -2390,7 +2390,7 @@ footer {
 }
 
 .wo-set-table input:focus {
-  border-color: var(--accent);
+  border-color: var(--primary);
   outline: none;
 }
 
@@ -2444,15 +2444,15 @@ footer {
   border: 1px dashed var(--border);
   border-radius: 6px;
   background: transparent;
-  color: var(--muted);
+  color: var(--text-muted);
   cursor: pointer;
   font-family: inherit;
   transition: all 0.2s;
 }
 
 .wo-add-set-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 /* Add Exercise Button */
@@ -2468,7 +2468,7 @@ footer {
 .wo-remove-ex-btn {
   background: none;
   border: none;
-  color: var(--muted);
+  color: var(--text-muted);
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
@@ -2507,12 +2507,12 @@ footer {
   font-family: 'JetBrains Mono', monospace;
   font-size: 1.2rem;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--primary);
 }
 
 .wo-stat-lbl {
   font-size: 0.72rem;
-  color: var(--muted);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
@@ -2521,7 +2521,7 @@ footer {
 .wo-rest-state {
   text-align: center;
   padding: 48px 24px;
-  color: var(--muted);
+  color: var(--text-muted);
 }
 
 .wo-rest-state svg {
@@ -2552,7 +2552,7 @@ footer {
   border: 1px solid var(--border);
   border-radius: 8px;
   background: transparent;
-  color: var(--muted);
+  color: var(--text-muted);
   font-family: inherit;
   font-size: 0.82rem;
   font-weight: 500;
@@ -2561,14 +2561,14 @@ footer {
 }
 
 .sched-day-btn:hover {
-  border-color: var(--accent);
+  border-color: var(--primary);
   color: var(--text);
 }
 
 .sched-day-btn.active {
-  background: var(--accent);
+  background: var(--primary);
   color: white;
-  border-color: var(--accent);
+  border-color: var(--primary);
 }
 
 .sched-day-btn.has-exercises {
@@ -2619,7 +2619,7 @@ footer {
 .toggle-label input[type="checkbox"] {
   width: 18px;
   height: 18px;
-  accent-color: var(--accent);
+  accent-color: var(--primary);
 }
 
 .sched-exercise-list {
@@ -2635,7 +2635,7 @@ footer {
   gap: 8px;
   align-items: center;
   padding: 8px;
-  background: var(--card);
+  background: var(--bg-card);
   border-radius: 8px;
   border: 1px solid var(--border);
 }
@@ -2651,7 +2651,7 @@ footer {
 }
 
 .sched-exercise-row input:focus {
-  border-color: var(--accent);
+  border-color: var(--primary);
   outline: none;
 }
 
@@ -2661,7 +2661,7 @@ footer {
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: var(--muted);
+  color: var(--text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
