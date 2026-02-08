@@ -57,7 +57,10 @@ let state = {
   currentView: 'nutrition',
   restTimerInterval: null,
   durationInterval: null,
-  restTimeLeft: 0
+  restTimeLeft: 0,
+  expandedExercises: new Set(),  // Track which exercise indices are expanded
+  isEditingWorkout: false,       // Prevent re-render while user is typing in set inputs
+  timerPromptShown: false        // Prevent repeated auto-start prompts per session
 };
 
 // === UTILITY FUNCTIONS ===
@@ -151,7 +154,7 @@ $("btnSignup").addEventListener("click", async (e) => {
     $("btnSignup").disabled = true;
     $("btnSignup").textContent = "Creating account...";
     await createUserWithEmailAndPassword(auth, email, pass);
-    toast("Account created! Welcome to Meal Tracker 🎉");
+    toast("Account created! Welcome to Fitness Tracker 🎉");
   } catch (err) {
     $("authError").textContent = formatAuthError(err.code);
   } finally {
@@ -243,7 +246,8 @@ async function initUserData(uid) {
   state.unsubscribeWorkoutLogs = onSnapshot(qWoLog, (snapshot) => {
     state.workoutLogs = [];
     snapshot.forEach((d) => state.workoutLogs.push({ id: d.id, ...d.data() }));
-    renderWorkoutView();
+    // Skip re-render if user is actively editing set inputs (prevents mobile keyboard dismissal)
+    if (!state.isEditingWorkout) renderWorkoutView();
   });
 }
 
@@ -1277,18 +1281,26 @@ async function init() {
   // === WORKOUT DATE NAVIGATION ===
   $("woPrevDateBtn").onclick = () => {
     state.workoutDate.setDate(state.workoutDate.getDate() - 1);
+    state.expandedExercises = new Set();
+    state.timerPromptShown = false;
     renderWorkoutView();
   };
   $("woNextDateBtn").onclick = () => {
     state.workoutDate.setDate(state.workoutDate.getDate() + 1);
+    state.expandedExercises = new Set();
+    state.timerPromptShown = false;
     renderWorkoutView();
   };
   $("woLastWeekBtn").onclick = () => {
     state.workoutDate.setDate(state.workoutDate.getDate() - 7);
+    state.expandedExercises = new Set();
+    state.timerPromptShown = false;
     renderWorkoutView();
   };
   $("woTodayBtn").onclick = () => {
     state.workoutDate = new Date();
+    state.expandedExercises = new Set();
+    state.timerPromptShown = false;
     renderWorkoutView();
   };
 
@@ -1381,6 +1393,7 @@ function getCurrentWorkoutData() {
         targetReps: ex.reps || '',
         bodyPart: ex.bodyPart || '',
         notes: ex.notes || '',
+        scheduleNotes: ex.notes || '',
         fromSchedule: true,
         completed: false,
         sets: Array.from({ length: parseInt(ex.sets) || 3 }, () => ({
@@ -1511,18 +1524,28 @@ function renderExerciseCards(data) {
   
   if (!data.exercises || data.exercises.length === 0) return;
   
+  // If no expand state tracked yet, expand all by default
+  if (state.expandedExercises.size === 0 && data.exercises.length > 0) {
+    data.exercises.forEach((_, i) => state.expandedExercises.add(i));
+  }
+  
   data.exercises.forEach((ex, exIdx) => {
+    const isExpanded = state.expandedExercises.has(exIdx);
     const card = document.createElement('div');
-    card.className = `wo-exercise-card${ex.completed ? ' completed' : ''} expanded`;
+    card.className = `wo-exercise-card${ex.completed ? ' completed' : ''}${isExpanded ? ' expanded' : ''}`;
     
     const prev = getPreviousPerformance(ex.name);
     const lastNotes = getLastExerciseNotes(ex.name);
     const isSuperset = ex.name.toLowerCase().includes('superset');
     
     // Build note indicator for collapsed state
-    const noteText = ex.notes || '';
+    const noteText = ex.notes || ex.scheduleNotes || '';
     const noteIndicatorHtml = noteText ? 
       `<div class="wo-ex-note-indicator"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>${noteText.substring(0, 50)}${noteText.length > 50 ? '...' : ''}</div>` : '';
+    
+    // Schedule notes badge (shown if exercise came from schedule with notes)
+    const schedNoteHtml = ex.scheduleNotes ? 
+      `<div class="wo-sched-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${ex.scheduleNotes}</div>` : '';
     
     card.innerHTML = `
       <div class="wo-ex-header" data-idx="${exIdx}">
@@ -1544,10 +1567,11 @@ function renderExerciseCards(data) {
         <svg class="wo-ex-toggle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polyline points="6 9 12 15 18 9"/></svg>
       </div>
       <div class="wo-ex-body">
+        ${schedNoteHtml}
         <div class="wo-ex-notes-section">
           <div class="wo-ex-notes-label">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            Notes${lastNotes ? ` <span style="font-weight:400;color:var(--muted)">(last note from ${lastNotes.date})</span>` : ''}
+            Notes${lastNotes ? ` <span style="font-weight:400;color:var(--text-muted)">(last note from ${lastNotes.date})</span>` : ''}
           </div>
           <textarea data-ex-idx="${exIdx}" placeholder="e.g. Superset with curls, focus on form, felt strong today...">${ex.notes || (lastNotes ? lastNotes.notes : '')}</textarea>
         </div>
@@ -1557,9 +1581,9 @@ function renderExerciseCards(data) {
             ${(ex.sets || []).map((s, sIdx) => `
               <tr>
                 <td>${sIdx + 1}</td>
-                <td><input type="number" value="${s.weight}" data-ex="${exIdx}" data-set="${sIdx}" data-field="weight" placeholder="—" /></td>
-                <td><input type="number" value="${s.reps}" data-ex="${exIdx}" data-set="${sIdx}" data-field="reps" placeholder="—" /></td>
-                <td><input type="number" value="${s.rpe}" data-ex="${exIdx}" data-set="${sIdx}" data-field="rpe" placeholder="—" min="1" max="10" /></td>
+                <td><input type="number" inputmode="decimal" value="${s.weight}" data-ex="${exIdx}" data-set="${sIdx}" data-field="weight" placeholder="—" /></td>
+                <td><input type="number" inputmode="numeric" value="${s.reps}" data-ex="${exIdx}" data-set="${sIdx}" data-field="reps" placeholder="—" /></td>
+                <td><input type="number" inputmode="numeric" value="${s.rpe}" data-ex="${exIdx}" data-set="${sIdx}" data-field="rpe" placeholder="—" min="1" max="10" /></td>
                 <td>
                   <div class="wo-set-check${s.completed ? ' checked' : ''}" data-ex="${exIdx}" data-set="${sIdx}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1584,7 +1608,13 @@ function renderExerciseCards(data) {
     const header = e.target.closest('.wo-ex-header');
     if (header && !e.target.closest('.wo-ex-check') && !e.target.closest('.wo-remove-ex-btn')) {
       const card = header.closest('.wo-exercise-card');
+      const idx = parseInt(header.dataset.idx);
       card.classList.toggle('expanded');
+      if (card.classList.contains('expanded')) {
+        state.expandedExercises.add(idx);
+      } else {
+        state.expandedExercises.delete(idx);
+      }
       return;
     }
     
@@ -1617,21 +1647,38 @@ function renderExerciseCards(data) {
     }
   };
   
-  // Input change delegation
+  // Input change delegation with debounced saves
+  let setInputTimer = null;
   container.addEventListener('input', (e) => {
     // Set inputs (weight, reps, rpe)
     if (e.target.dataset.ex !== undefined && e.target.dataset.set !== undefined) {
-      handleSetInputChange(
-        parseInt(e.target.dataset.ex),
-        parseInt(e.target.dataset.set),
-        e.target.dataset.field,
-        e.target.value
-      );
+      clearTimeout(setInputTimer);
+      setInputTimer = setTimeout(() => {
+        handleSetInputChange(
+          parseInt(e.target.dataset.ex),
+          parseInt(e.target.dataset.set),
+          e.target.dataset.field,
+          e.target.value
+        );
+      }, 600);
     }
     
     // Exercise notes
     if (e.target.closest('.wo-ex-notes-section') && e.target.tagName === 'TEXTAREA') {
       handleExerciseNoteChange(parseInt(e.target.dataset.exIdx), e.target.value);
+    }
+  });
+  
+  // Focus/blur on set inputs to prevent re-render while typing (mobile keyboard fix)
+  container.addEventListener('focusin', (e) => {
+    if (e.target.matches('.wo-set-table input')) {
+      state.isEditingWorkout = true;
+    }
+  });
+  container.addEventListener('focusout', (e) => {
+    if (e.target.matches('.wo-set-table input')) {
+      // Small delay so any pending save triggers before we allow re-render
+      setTimeout(() => { state.isEditingWorkout = false; }, 1000);
     }
   });
 }
@@ -1666,6 +1713,23 @@ function handleSetComplete(exIdx, setIdx) {
   // Start rest timer if completing a set
   if (set.completed) {
     startRestTimer();
+    
+    // Auto-start prompt: if no active workout and this is the first completed set in the whole workout
+    if (!state.activeWorkout && !state.timerPromptShown) {
+      const anyPreviouslyCompleted = data.exercises.some((ex, ei) =>
+        (ex.sets || []).some((s, si) => s.completed && !(ei === exIdx && si === setIdx))
+      );
+      if (!anyPreviouslyCompleted) {
+        state.timerPromptShown = true;
+        showWorkoutPrompt(
+          'Start Workout Timer?',
+          'You completed your first set. Start tracking workout duration?',
+          'Start Timer',
+          null,
+          () => { startWorkout(); }
+        );
+      }
+    }
   }
   
   renderWorkoutView();
@@ -1682,7 +1746,51 @@ function handleExerciseComplete(exIdx) {
     ex.sets.forEach(s => { s.completed = ex.completed; });
   }
   saveWorkoutLog(data);
+  
+  // Check if ALL exercises are now completed — prompt to finish workout
+  if (ex.completed && state.activeWorkout) {
+    const allDone = data.exercises.every(e => e.completed);
+    if (allDone) {
+      showWorkoutPrompt(
+        'Workout Complete?',
+        'All exercises are done! Would you like to finish the workout or add another exercise?',
+        'Finish Workout',
+        'Add Exercise',
+        () => { finishWorkout(); },
+        () => {
+          $("addExName").value = "";
+          $("addExSets").value = "3";
+          $("addExReps").value = "";
+          $("addExBodyPart").value = "";
+          $("addExNotes").value = "";
+          $("addExerciseModal").showModal();
+        }
+      );
+    }
+  }
+  
   renderWorkoutView();
+}
+
+// Show a workout action prompt (lightweight confirm dialog)
+function showWorkoutPrompt(title, message, primaryLabel, secondaryLabel, onPrimary, onSecondary) {
+  const dialog = $("woPromptDialog");
+  $("woPromptTitle").textContent = title;
+  $("woPromptMsg").textContent = message;
+  $("woPromptPrimary").textContent = primaryLabel;
+  
+  const secondaryBtn = $("woPromptSecondary");
+  if (secondaryLabel) {
+    secondaryBtn.textContent = secondaryLabel;
+    secondaryBtn.classList.remove("hidden");
+    secondaryBtn.onclick = () => { dialog.close(); if (onSecondary) onSecondary(); };
+  } else {
+    secondaryBtn.classList.add("hidden");
+  }
+  
+  $("woPromptPrimary").onclick = () => { dialog.close(); if (onPrimary) onPrimary(); };
+  $("woPromptDismiss").onclick = () => dialog.close();
+  dialog.showModal();
 }
 
 // Add a set to an exercise
@@ -1690,6 +1798,8 @@ function addSet(exIdx) {
   const data = getCurrentWorkoutData();
   if (!data.exercises[exIdx]) return;
   data.exercises[exIdx].sets.push({ weight: '', reps: '', rpe: '', completed: false });
+  // Ensure this exercise stays expanded
+  state.expandedExercises.add(exIdx);
   saveWorkoutLog(data);
   renderWorkoutView();
 }
@@ -1698,6 +1808,14 @@ function addSet(exIdx) {
 function removeExercise(exIdx) {
   const data = getCurrentWorkoutData();
   data.exercises.splice(exIdx, 1);
+  // Rebuild expanded set with shifted indices
+  const newExpanded = new Set();
+  state.expandedExercises.forEach(i => {
+    if (i < exIdx) newExpanded.add(i);
+    else if (i > exIdx) newExpanded.add(i - 1);
+    // Skip the removed index
+  });
+  state.expandedExercises = newExpanded;
   saveWorkoutLog(data);
   renderWorkoutView();
 }
@@ -1729,6 +1847,9 @@ function addExerciseToWorkout() {
   
   // Remove restDay flag since we're adding exercises
   data.restDay = false;
+  
+  // Auto-expand the newly added exercise
+  state.expandedExercises.add(data.exercises.length - 1);
   
   saveWorkoutLog(data);
   $("addExerciseModal").close();
@@ -1859,13 +1980,18 @@ function renderScheduleEditor() {
     const row = document.createElement('div');
     row.className = 'sched-exercise-row';
     row.innerHTML = `
-      <input type="text" value="${ex.name || ''}" placeholder="Exercise name" data-idx="${idx}" data-field="name" />
-      <input type="text" value="${ex.sets || ''}" placeholder="Sets" data-idx="${idx}" data-field="sets" />
-      <input type="text" value="${ex.reps || ''}" placeholder="Reps" data-idx="${idx}" data-field="reps" />
-      <input type="text" value="${ex.bodyPart || ''}" placeholder="Body part" data-idx="${idx}" data-field="bodyPart" />
-      <button class="sched-remove-btn" data-idx="${idx}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+      <div class="sched-ex-main">
+        <input type="text" value="${ex.name || ''}" placeholder="Exercise name" data-idx="${idx}" data-field="name" />
+        <input type="text" value="${ex.sets || ''}" placeholder="Sets" data-idx="${idx}" data-field="sets" class="sched-input-sm" />
+        <input type="text" value="${ex.reps || ''}" placeholder="Reps" data-idx="${idx}" data-field="reps" class="sched-input-sm" />
+        <input type="text" value="${ex.bodyPart || ''}" placeholder="Body part" data-idx="${idx}" data-field="bodyPart" />
+        <button class="sched-remove-btn" data-idx="${idx}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="sched-ex-notes">
+        <input type="text" value="${ex.notes || ''}" placeholder="Notes (e.g. superset with curls, slow eccentric…)" data-idx="${idx}" data-field="notes" class="sched-notes-input" />
+      </div>
     `;
     list.appendChild(row);
   });
@@ -1887,7 +2013,7 @@ function addScheduleExerciseRow() {
   const dayName = getSelectedScheduleDay();
   const data = state.workoutSchedule[dayName] || {};
   const exercises = data.exercises || [];
-  exercises.push({ name: '', sets: '3', reps: '', bodyPart: '' });
+  exercises.push({ name: '', sets: '3', reps: '', bodyPart: '', notes: '' });
   state.workoutSchedule[dayName] = { ...data, exercises };
   renderScheduleEditor();
   
@@ -1913,7 +2039,8 @@ async function saveScheduleDay() {
     name: row.querySelector('[data-field="name"]').value.trim(),
     sets: row.querySelector('[data-field="sets"]').value.trim(),
     reps: row.querySelector('[data-field="reps"]').value.trim(),
-    bodyPart: row.querySelector('[data-field="bodyPart"]').value.trim()
+    bodyPart: row.querySelector('[data-field="bodyPart"]').value.trim(),
+    notes: row.querySelector('[data-field="notes"]')?.value.trim() || ''
   })).filter(ex => ex.name); // Remove empty rows
   
   const data = { title, focus, restDay, exercises };
