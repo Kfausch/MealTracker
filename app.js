@@ -9,7 +9,8 @@ import {
   getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { 
-  getFirestore, collection, doc, setDoc, addDoc, updateDoc, deleteDoc, writeBatch,
+  initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+  collection, doc, setDoc, addDoc, updateDoc, deleteDoc, writeBatch,
   query, where, orderBy, onSnapshot, getDoc, getDocs
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -27,7 +28,15 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+let db;
+try {
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  });
+} catch (e) {
+  console.warn("Persistent cache unavailable, falling back:", e);
+  db = initializeFirestore(app, {});
+}
 
 // === APPLICATION STATE ===
 let state = {
@@ -35,6 +44,7 @@ let state = {
   currentDate: new Date(),
   log: [],
   library: [],
+  selectedMealId: null,
   days: {},
   targets: { 
     calories: 1800, 
@@ -49,26 +59,32 @@ let state = {
   unsubscribeDays: null,
   // Workout state
   workoutDate: new Date(),
-  workoutSchedule: {},    // Template: {Monday: {title, focus, restDay, exercises[]}, ...}
-  workoutLogs: [],        // All workout log documents
-  activeWorkout: null,    // {startTime, exerciseStates}
+  workoutSchedule: {},
+  workoutLogs: [],
+  activeWorkout: null,
   unsubscribeSchedule: null,
   unsubscribeWorkoutLogs: null,
   currentView: 'nutrition',
   restTimerInterval: null,
   durationInterval: null,
   restTimeLeft: 0,
-  expandedExercises: new Set(),  // Track which exercise indices are expanded
-  isEditingWorkout: false,       // Prevent re-render while user is typing in set inputs
-  timerPromptShown: false        // Prevent repeated auto-start prompts per session
+  expandedExercises: new Set(),
+  isEditingWorkout: false,
+  timerPromptShown: false
 };
 
 // === UTILITY FUNCTIONS ===
 const $ = (id) => document.getElementById(id);
 const num = (v) => parseFloat(v) || 0;
 const fmt = (v) => Number.isFinite(v) ? Math.round(v * 10) / 10 : 0;
+const esc = (s) => String(s ?? "")
+  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
-// Get date string based on user timezone setting
+const vibrate = (pattern = 10) => {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+};
+
 const getLocalDate = (d) => {
   const tz = state.targets.timezone || "local";
   if (tz === "local") {
@@ -82,12 +98,32 @@ const getLocalDate = (d) => {
   }
 };
 
-// Toast notification
-function toast(msg, duration = 2500) {
+let toastTimer = null;
+function toast(msg, duration = 2500, actionLabel = null, onAction = null) {
   const t = $("toast");
-  t.textContent = msg;
+  clearTimeout(toastTimer);
+  t.innerHTML = "";
+  const span = document.createElement("span");
+  span.textContent = msg;
+  t.appendChild(span);
+  
+  if (actionLabel && onAction) {
+    const btn = document.createElement("button");
+    btn.className = "toast-action";
+    btn.textContent = actionLabel;
+    btn.onclick = () => {
+      clearTimeout(toastTimer);
+      t.classList.remove("show");
+      onAction();
+    };
+    t.appendChild(btn);
+    t.classList.add("has-action");
+  } else {
+    t.classList.remove("has-action");
+  }
+  
   t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), duration);
+  toastTimer = setTimeout(() => t.classList.remove("show"), duration);
 }
 
 // === AUTHENTICATION ===
@@ -184,7 +220,6 @@ $("btnLogout").addEventListener("click", () => {
 
 // === DATABASE SYNC ===
 async function initUserData(uid) {
-  // Load user settings
   const settingsRef = doc(db, "users", uid, "data", "settings");
   try {
     const snap = await getDoc(settingsRef);
@@ -196,7 +231,6 @@ async function initUserData(uid) {
     console.error("Error loading settings:", e);
   }
 
-  // Subscribe to meal library
   const libRef = collection(db, "users", uid, "meals");
   const qLib = query(libRef, orderBy("name"));
   state.unsubscribeLib = onSnapshot(qLib, (snapshot) => {
@@ -206,7 +240,6 @@ async function initUserData(uid) {
     renderSettingsLibrary();
   });
 
-  // Subscribe to food log
   const logRef = collection(db, "users", uid, "logs");
   const qLog = query(logRef, orderBy("createdAt", "desc"));
   $("logLoader").style.display = "flex";
@@ -218,7 +251,6 @@ async function initUserData(uid) {
     calculateStreak();
   });
 
-  // Subscribe to daily metrics
   const daysRef = collection(db, "users", uid, "days");
   state.unsubscribeDays = onSnapshot(daysRef, (snapshot) => {
     state.days = {};
@@ -229,7 +261,6 @@ async function initUserData(uid) {
     renderWeeklyMini();
   });
 
-  // Subscribe to workout schedule (template)
   const schedRef = collection(db, "users", uid, "workoutSchedule");
   state.unsubscribeSchedule = onSnapshot(schedRef, (snapshot) => {
     state.workoutSchedule = {};
@@ -240,20 +271,16 @@ async function initUserData(uid) {
     renderScheduleEditor();
   });
 
-  // Subscribe to workout logs
   const woLogRef = collection(db, "users", uid, "workoutLogs");
   const qWoLog = query(woLogRef, orderBy("date", "desc"));
   state.unsubscribeWorkoutLogs = onSnapshot(qWoLog, (snapshot) => {
     state.workoutLogs = [];
     snapshot.forEach((d) => state.workoutLogs.push({ id: d.id, ...d.data() }));
-    // Skip re-render if user is actively editing set inputs (prevents mobile keyboard dismissal)
     if (!state.isEditingWorkout) renderWorkoutView();
   });
 }
 
 // === CORE FUNCTIONS ===
-
-// Save daily targets
 async function saveTargets() {
   if (!state.user) return;
   state.targets = {
@@ -270,7 +297,6 @@ async function saveTargets() {
   render();
 }
 
-// Save daily metrics (weight, steps)
 async function saveDayMetrics() {
   if (!state.user) return;
   const dateStr = getLocalDate(state.currentDate);
@@ -283,7 +309,6 @@ async function saveDayMetrics() {
   toast("Metrics saved");
 }
 
-// Save daily notes
 async function saveDayNotes() {
   if (!state.user) return;
   const dateStr = getLocalDate(state.currentDate);
@@ -293,7 +318,6 @@ async function saveDayNotes() {
   toast("Note saved");
 }
 
-// Add food entry to log
 async function addEntry(name, macros, source, servings = 1) {
   if (!state.user) return;
   const s = num(servings);
@@ -323,16 +347,12 @@ async function addEntry(name, macros, source, servings = 1) {
   try {
     await addDoc(collection(db, "users", state.user.uid, "logs"), entry);
     toast(`Added: ${name}`);
-    $("mealSearch").value = "";
-    $("mealServings").value = "1";
-    buildDropdown("");
   } catch (e) {
     console.error("Error adding entry:", e);
     toast("Error adding entry");
   }
 }
 
-// Save meal to library
 async function saveToLibrary(name, macros) {
   if (!state.user) return;
   try {
@@ -349,7 +369,6 @@ async function saveToLibrary(name, macros) {
   }
 }
 
-// Update library meal
 async function updateLibraryMeal(id, data) {
   if (!state.user) return;
   const ref = doc(db, "users", state.user.uid, "meals", id);
@@ -357,7 +376,6 @@ async function updateLibraryMeal(id, data) {
   toast("Meal updated");
 }
 
-// Delete library meal
 async function deleteLibraryMeal(id) {
   if (!state.user) return;
   if (!confirm("Permanently delete this food from your library?")) return;
@@ -366,23 +384,27 @@ async function deleteLibraryMeal(id) {
   toast("Meal deleted");
 }
 
-// Delete log entry
 async function deleteEntry(id) {
   if (!state.user) return;
-  if (!confirm("Remove this item from today's log?")) return;
+  const entry = state.log.find(i => i.id === id);
   await deleteDoc(doc(db, "users", state.user.uid, "logs", id));
-  toast("Entry removed");
+  vibrate();
+  
+  if (entry) {
+    const { id: _omit, ...data } = entry;
+    toast(`Removed ${entry.name}`, 5000, "Undo", async () => {
+      await addDoc(collection(db, "users", state.user.uid, "logs"), data);
+      toast("Restored");
+    });
+  }
 }
 
-// Copy previous day's meals
 async function copyPreviousDay() {
   if (!state.user) return;
-  
   const currentDateStr = getLocalDate(state.currentDate);
   const prevDate = new Date(state.currentDate);
   prevDate.setDate(prevDate.getDate() - 1);
   const prevDateStr = getLocalDate(prevDate);
-  
   const prevDayLog = state.log.filter(i => i.date === prevDateStr);
   
   if (prevDayLog.length === 0) {
@@ -398,9 +420,9 @@ async function copyPreviousDay() {
     
     prevDayLog.forEach((meal) => {
       const newDoc = doc(collectionRef);
+      const { id, ...mealData } = meal;
       batch.set(newDoc, {
-        ...meal,
-        id: undefined,
+        ...mealData,
         date: currentDateStr,
         createdAt: Date.now()
       });
@@ -414,7 +436,6 @@ async function copyPreviousDay() {
   }
 }
 
-// Import default meals from JSON
 async function importDefaults() {
   if (!state.user) return;
   const btn = $("btnImportDefaults");
@@ -453,13 +474,11 @@ async function importDefaults() {
   }
 }
 
-// Calculate logging streak
 function calculateStreak() {
   const today = new Date();
   let streak = 0;
   let checkDate = new Date(today);
   
-  // Start from today and go backwards
   while (true) {
     const dateStr = getLocalDate(checkDate);
     const dayLog = state.log.filter(i => i.date === dateStr);
@@ -468,7 +487,6 @@ function calculateStreak() {
       streak++;
       checkDate.setDate(checkDate.getDate() - 1);
     } else {
-      // If it's today and nothing logged, don't break streak yet
       if (dateStr === getLocalDate(today)) {
         checkDate.setDate(checkDate.getDate() - 1);
         continue;
@@ -478,14 +496,11 @@ function calculateStreak() {
   }
   
   $("streakCount").textContent = streak;
-  
-  // Add animation if streak increased
   const badge = $("streakBadge");
   badge.style.transform = "scale(1.1)";
   setTimeout(() => { badge.style.transform = "scale(1)"; }, 200);
 }
 
-// Export data to CSV
 function exportToCSV() {
   if (!state.user || state.log.length === 0) {
     toast("No data to export");
@@ -503,9 +518,7 @@ function exportToCSV() {
     Math.round(entry.fat)
   ]);
   
-  // Sort by date
   rows.sort((a, b) => a[0].localeCompare(b[0]));
-  
   const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
   const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
@@ -520,7 +533,6 @@ function exportToCSV() {
 }
 
 // === UI RENDERING ===
-
 function getDayLog() {
   const dateStr = getLocalDate(state.currentDate);
   return state.log.filter(i => i.date === dateStr);
@@ -550,29 +562,53 @@ function updateDateDisplay() {
 }
 
 function buildDropdown(filter = "") {
-  const sel = $("mealDropdown");
-  sel.innerHTML = "";
-  const term = filter.toLowerCase();
+  const host = $("mealResults");
+  host.innerHTML = "";
+  const term = filter.toLowerCase().trim();
   const matches = state.library.filter(m => m.name.toLowerCase().includes(term));
   
-  matches.forEach(item => {
-    const opt = document.createElement("option");
-    opt.value = item.id;
-    opt.textContent = item.name;
-    sel.appendChild(opt);
+  if (!matches.length) {
+    state.selectedMealId = null;
+    host.innerHTML = `<div class="meal-result-empty">No matches found${term ? ` for "${esc(term)}"` : ""}</div>`;
+    updateMealPreview(null);
+    return;
+  }
+  
+  if (!matches.some(m => m.id === state.selectedMealId)) {
+    state.selectedMealId = matches[0].id;
+  }
+  
+  matches.slice(0, 50).forEach(item => {
+    const row = document.createElement("div");
+    row.className = "meal-result" + (item.id === state.selectedMealId ? " selected" : "");
+    row.setAttribute("role", "option");
+    row.innerHTML = `
+      <div class="meal-result-info">
+        <span class="meal-result-name">${esc(item.name)}</span>
+        <span class="meal-result-macros">${Math.round(item.calories)} cal · P ${fmt(item.protein)} · C ${fmt(item.carbs)} · F ${fmt(item.fat)}</span>
+      </div>
+      <button class="meal-result-quickadd" title="Quick add 1 serving" aria-label="Quick add ${esc(item.name)}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    `;
+    
+    row.onclick = () => {
+      state.selectedMealId = item.id;
+      host.querySelectorAll(".meal-result").forEach(r => r.classList.remove("selected"));
+      row.classList.add("selected");
+      updateMealPreview(item);
+    };
+    
+    row.querySelector(".meal-result-quickadd").onclick = (e) => {
+      e.stopPropagation();
+      vibrate();
+      addEntry(item.name, item, "db", 1);
+    };
+    
+    host.appendChild(row);
   });
   
-  if (!matches.length) {
-    const opt = document.createElement("option");
-    opt.textContent = "No matches found";
-    opt.disabled = true;
-    sel.appendChild(opt);
-    updateMealPreview(null);
-  } else {
-    sel.selectedIndex = 0;
-    const selectedItem = state.library.find(x => x.id === sel.value);
-    updateMealPreview(selectedItem);
-  }
+  updateMealPreview(state.library.find(x => x.id === state.selectedMealId));
 }
 
 function updateMealPreview(item) {
@@ -603,12 +639,16 @@ function renderRecents() {
   
   const map = new Map();
   state.log.forEach(item => {
-    if (!map.has(item.name) && item.base) {
-      map.set(item.name, item.base);
+    if (!item.base) return;
+    if (!map.has(item.name)) {
+      map.set(item.name, { macros: item.base, count: 0 });
     }
+    map.get(item.name).count++;
   });
   
-  const recents = Array.from(map.entries()).slice(0, 12);
+  const recents = Array.from(map.entries())
+    .sort((a, b) => b[1].count - a[1].count)
+    .slice(0, 16);
   
   if (recents.length === 0) {
     $("noRecents").classList.remove("hidden");
@@ -617,15 +657,23 @@ function renderRecents() {
   
   $("noRecents").classList.add("hidden");
   
-  recents.forEach(([name, macros]) => {
-    const el = document.createElement("div");
+  recents.forEach(([name, { macros, count }]) => {
+    const el = document.createElement("button");
+    el.type = "button";
     el.className = "recent-item";
-    el.textContent = name;
-    el.onclick = () => addEntry(name, macros, "recent", 1);
+    el.innerHTML = `
+      <span class="recent-name">${esc(name)}</span>
+      <span class="recent-meta">${Math.round(macros.calories)} cal${count > 1 ? ` · ×${count}` : ""}</span>
+    `;
+    el.onclick = () => {
+      vibrate();
+      addEntry(name, macros, "recent", 1);
+    };
     host.appendChild(el);
   });
 }
 
+// Swipe-to-delete log item renderer
 function renderLog() {
   const list = $("selectedMeals");
   list.innerHTML = "";
@@ -634,8 +682,8 @@ function renderLog() {
   $("emptyLog").style.display = dayLog.length ? "none" : "flex";
   
   dayLog.forEach(item => {
-    const el = document.createElement("div");
-    el.className = "log-item";
+    const wrapper = document.createElement("div");
+    wrapper.className = "log-item-wrapper";
     
     const cal = num(item.calories);
     const pro = num(item.protein);
@@ -643,32 +691,66 @@ function renderLog() {
     if (ppc.endsWith('0')) ppc = ppc.slice(0, -1);
     if (ppc.endsWith('.')) ppc = ppc.slice(0, -1);
     
-    el.innerHTML = `
-      <div class="log-info">
-        <h4>${item.name}</h4>
-        <div class="log-sub">${fmt(item.servings)} srv • ${Math.round(cal)} kcal</div>
-        <div class="log-macros">
-          <span class="macro-p">P: ${fmt(pro)}g</span>
-          <span class="macro-c">C: ${fmt(item.carbs)}g</span>
-          <span class="macro-f">F: ${fmt(item.fat)}g</span>
-          <span class="macro-ppc">PPC: ${ppc}</span>
-        </div>
+    wrapper.innerHTML = `
+      <div class="log-item-background">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+          <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+        </svg>
       </div>
-      <div class="log-actions">
-        <button class="delete-trigger" title="Remove">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-            <path d="M18 6L6 18M6 6l12 12"/>
-          </svg>
-        </button>
+      <div class="log-item">
+        <div class="log-info">
+          <h4>${esc(item.name)}</h4>
+          <div class="log-sub">${fmt(item.servings)} srv • ${Math.round(cal)} kcal</div>
+          <div class="log-macros">
+            <span class="macro-p">P: ${fmt(pro)}g</span>
+            <span class="macro-c">C: ${fmt(item.carbs)}g</span>
+            <span class="macro-f">F: ${fmt(item.fat)}g</span>
+            <span class="macro-ppc">PPC: ${ppc}</span>
+          </div>
+        </div>
+        <div class="log-actions">
+          <button class="delete-trigger" title="Remove">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
       </div>
     `;
     
+    const el = wrapper.querySelector('.log-item');
+    
+    // Swipe to delete logic
+    let startX = 0, currentX = 0;
+    el.addEventListener('touchstart', (e) => {
+      startX = e.touches[0].clientX;
+      el.classList.add('swiping');
+    }, {passive: true});
+    
+    el.addEventListener('touchmove', (e) => {
+      currentX = e.touches[0].clientX - startX;
+      // Only allow swiping left
+      if (currentX < 0) {
+        el.style.transform = `translateX(${currentX}px)`;
+      }
+    }, {passive: true});
+    
+    el.addEventListener('touchend', (e) => {
+      el.classList.remove('swiping');
+      if (currentX < -100) {
+        el.style.transform = `translateX(-100%)`;
+        setTimeout(() => deleteEntry(item.id), 250);
+      } else {
+        el.style.transform = `translateX(0)`;
+      }
+      currentX = 0;
+    });
+
     el.querySelector(".delete-trigger").onclick = (e) => {
       e.stopPropagation();
       deleteEntry(item.id);
     };
     
-    list.appendChild(el);
+    el.onclick = () => openEditEntryModal(item);
+    list.appendChild(wrapper);
   });
   
   updateStats(dayLog);
@@ -691,7 +773,6 @@ function updateStats(dayLog) {
     f: acc.f + x.fat
   }), { cal: 0, p: 0, c: 0, f: 0 });
   
-  // Update donut chart
   const totalGrams = totals.p + totals.c + totals.f;
   const pPct = totalGrams ? (totals.p / totalGrams) * 100 : 0;
   const cPct = totalGrams ? (totals.c / totalGrams) * 100 : 0;
@@ -707,13 +788,11 @@ function updateStats(dayLog) {
     chart.style.background = "var(--border)";
   }
   
-  // Update displays
   $("calDisplay").textContent = Math.round(totals.cal);
   $("dispP").textContent = `${Math.round(totals.p)}g`;
   $("dispC").textContent = `${Math.round(totals.c)}g`;
   $("dispF").textContent = `${Math.round(totals.f)}g`;
   
-  // Update progress bars
   const setBar = (fillId, remId, currentId, targetId, val, target, unit = "") => {
     const pct = Math.min((val / target) * 100, 100);
     const rem = target - val;
@@ -777,7 +856,6 @@ function renderWeeklyMini() {
     weekDots.appendChild(dot);
   }
   
-  // Update weekly averages
   $("weekAvgCal").textContent = daysWithData > 0 ? Math.round(weekCalTotal / daysWithData) : "--";
   $("weekAvgPro").textContent = daysWithData > 0 ? `${Math.round(weekProTotal / daysWithData)}g` : "--";
 }
@@ -810,8 +888,8 @@ function renderSettingsLibrary() {
     div.className = "lib-item";
     div.innerHTML = `
       <div>
-        <div class="lib-info">${item.name}</div>
-        <div class="lib-meta">${Math.round(item.calories)} cal • P:${item.protein} C:${item.carbs} F:${item.fat}</div>
+        <div class="lib-info">${esc(item.name)}</div>
+        <div class="lib-meta">${Math.round(item.calories)} cal • P:${fmt(item.protein)} C:${fmt(item.carbs)} F:${fmt(item.fat)}</div>
       </div>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="color: var(--text-muted);">
         <polyline points="9 18 15 12 9 6"/>
@@ -823,11 +901,9 @@ function renderSettingsLibrary() {
 }
 
 // === ANALYTICS ===
-
 function renderStats() {
   const fNum = (n) => n ? Math.round(n).toLocaleString() : "-";
   
-  // Weekly Stats
   const weeklyTbody = $("weeklyTable").querySelector("tbody");
   weeklyTbody.innerHTML = "";
   const today = new Date();
@@ -878,7 +954,6 @@ function renderStats() {
     <td>${fNum(weeklyTotals.steps)}</td>
   `;
   
-  // Monthly Overview
   const monthlyTbody = $("monthlyTable").querySelector("tbody");
   monthlyTbody.innerHTML = "";
   
@@ -913,10 +988,7 @@ function renderStats() {
     monthlyTbody.appendChild(tr);
   }
   
-  // Weight chart
   renderWeightChart();
-  
-  // Adherence grid
   renderAdherenceGrid();
 }
 
@@ -991,6 +1063,55 @@ function renderAdherenceGrid() {
 }
 
 // === MODAL HANDLERS ===
+let editingEntryId = null;
+let editingEntryBase = null;
+
+function openEditEntryModal(item) {
+  editingEntryId = item.id;
+  editingEntryBase = item.base || null;
+  $("editName").value = item.name;
+  $("editServings").value = item.servings;
+  $("editCalories").value = fmt(item.calories);
+  $("editP").value = fmt(item.protein);
+  $("editC").value = fmt(item.carbs);
+  $("editF").value = fmt(item.fat);
+  $("editModal").showModal();
+}
+
+$("editServings").addEventListener("input", () => {
+  if (!editingEntryBase) return;
+  const s = num($("editServings").value);
+  if (s <= 0) return;
+  $("editCalories").value = fmt(editingEntryBase.calories * s);
+  $("editP").value = fmt(editingEntryBase.protein * s);
+  $("editC").value = fmt(editingEntryBase.carbs * s);
+  $("editF").value = fmt(editingEntryBase.fat * s);
+});
+
+$("saveEditBtn").onclick = async () => {
+  if (!state.user || !editingEntryId) return;
+  const servings = num($("editServings").value) || 1;
+  const totals = {
+    name: $("editName").value.trim() || "Entry",
+    servings,
+    calories: num($("editCalories").value),
+    protein: num($("editP").value),
+    carbs: num($("editC").value),
+    fat: num($("editF").value)
+  };
+  totals.base = {
+    calories: totals.calories / servings,
+    protein: totals.protein / servings,
+    carbs: totals.carbs / servings,
+    fat: totals.fat / servings
+  };
+  
+  await updateDoc(doc(db, "users", state.user.uid, "logs", editingEntryId), totals);
+  $("editModal").close();
+  toast("Entry updated");
+};
+
+$("closeEditBtn").onclick = () => $("editModal").close();
 
 let editingLibId = null;
 
@@ -1047,51 +1168,127 @@ $("deleteLibBtn").onclick = async () => {
 $("closeLibBtn").onclick = () => $("editLibModal").close();
 $("btnAddLibItem").onclick = () => openEditLibModal(null);
 
-// === EVENT LISTENERS & INITIALIZATION ===
+// Calculate barbell plates
+function openPlateCalc(targetWeight) {
+  $("calcTargetWeight").value = targetWeight || "";
+  $("plateCalcModal").showModal();
+  updatePlateCalc();
+}
 
+function updatePlateCalc() {
+  const target = num($("calcTargetWeight").value);
+  const bar = num($("calcBarWeight").value) || 45;
+  const visualizer = $("plateVisualizer");
+  const textOut = $("plateCalcText");
+  
+  visualizer.innerHTML = '<div class="plate-sleeve"></div>';
+  if (target <= bar) {
+    textOut.textContent = target === bar ? "Empty bar" : "Weight must be greater than bar weight";
+    return;
+  }
+
+  let perSide = (target - bar) / 2;
+  const plates = [45, 35, 25, 10, 5, 2.5];
+  const required = [];
+
+  plates.forEach(p => {
+    const count = Math.floor(perSide / p);
+    if (count > 0) {
+      for(let i=0; i<count; i++) required.push(p);
+      perSide -= (count * p);
+    }
+  });
+
+  required.forEach(p => {
+    const div = document.createElement("div");
+    div.className = `plate plate-${p.toString().replace('.', '_')}`;
+    div.textContent = p;
+    visualizer.appendChild(div);
+  });
+  
+  const counts = required.reduce((acc, curr) => { acc[curr] = (acc[curr] || 0) + 1; return acc; }, {});
+  const strArr = Object.entries(counts).map(([weight, qty]) => `${qty}x ${weight}lbs`).reverse();
+  textOut.textContent = `Per side: ${strArr.join(' | ')}`;
+}
+
+
+// === EVENT LISTENERS & INITIALIZATION ===
 async function init() {
-  // Theme
   const savedTheme = localStorage.getItem("mt_theme") || "dark";
   document.documentElement.setAttribute("data-theme", savedTheme);
   
-  // Auth state listener
   onAuthStateChanged(auth, (user) => updateAuthUI(user));
   
-  // Search functionality
   $("mealSearch").addEventListener("input", (e) => buildDropdown(e.target.value));
   
-  // Dropdown change - update preview
-  $("mealDropdown").addEventListener("change", () => {
-    const item = state.library.find(x => x.id === $("mealDropdown").value);
-    updateMealPreview(item);
-  });
-  
-  // Servings change - update preview
   $("mealServings").addEventListener("input", () => {
-    const item = state.library.find(x => x.id === $("mealDropdown").value);
+    const item = state.library.find(x => x.id === state.selectedMealId);
     updateMealPreview(item);
   });
   
-  // Servings adjustment buttons
   document.querySelectorAll(".btn-adjust").forEach(btn => {
     btn.onclick = () => {
       const adjust = num(btn.dataset.adjust);
       const input = $("mealServings");
       const newVal = Math.max(0.25, num(input.value) + adjust);
       input.value = newVal;
-      const item = state.library.find(x => x.id === $("mealDropdown").value);
+      const item = state.library.find(x => x.id === state.selectedMealId);
       updateMealPreview(item);
     };
   });
   
-  // Add meal from search
   $("addMealBtn").onclick = () => {
-    const id = $("mealDropdown").value;
-    const item = state.library.find(x => x.id === id);
+    const item = state.library.find(x => x.id === state.selectedMealId);
     if (item) {
       addEntry(item.name, item, "db", $("mealServings").value);
+      $("mealSearch").value = "";
+      $("mealServings").value = "1";
+      buildDropdown("");
     } else {
       toast("Please select a meal");
+    }
+  };
+
+  // PC Bulk Entry Toggle
+  $("btnSingleEntry").onclick = () => {
+    $("btnSingleEntry").classList.add("active");
+    $("btnBulkEntry").classList.remove("active");
+    $("manualForm").classList.remove("hidden");
+    $("bulkEntryForm").classList.add("hidden");
+  };
+  $("btnBulkEntry").onclick = () => {
+    $("btnBulkEntry").classList.add("active");
+    $("btnSingleEntry").classList.remove("active");
+    $("bulkEntryForm").classList.remove("hidden");
+    $("manualForm").classList.add("hidden");
+  };
+
+  // Process Bulk Data
+  $("processBulkBtn").onclick = async () => {
+    const text = $("bulkEntryText").value;
+    const lines = text.split('\n');
+    let added = 0;
+    
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      const parts = line.split(/[,\t]+/).map(s => s.trim());
+      if (parts.length >= 6) {
+        const macros = {
+          calories: num(parts[2]),
+          protein: num(parts[3]),
+          carbs: num(parts[4]),
+          fat: num(parts[5])
+        };
+        await addEntry(parts[0], macros, "bulk", num(parts[1]));
+        added++;
+      }
+    }
+    
+    if (added > 0) {
+      toast(`Successfully imported ${added} entries!`);
+      $("bulkEntryText").value = "";
+    } else {
+      toast("No valid data found. Check formatting.");
     }
   };
   
@@ -1105,7 +1302,6 @@ async function init() {
       fat: $("manualFat").value
     };
     addEntry(name, macros, "manual", $("manualServings").value);
-    // Clear form
     $("manualName").value = "";
     $("manualCalories").value = "";
     $("manualProtein").value = "";
@@ -1114,7 +1310,6 @@ async function init() {
     $("manualServings").value = "1";
   };
   
-  // Add and save to library
   $("addSaveManualBtn").onclick = async () => {
     const name = $("manualName").value.trim();
     if (!name) {
@@ -1129,7 +1324,6 @@ async function init() {
     };
     await saveToLibrary(name, macros);
     await addEntry(name, macros, "manual", $("manualServings").value);
-    // Clear form
     $("manualName").value = "";
     $("manualCalories").value = "";
     $("manualProtein").value = "";
@@ -1138,25 +1332,17 @@ async function init() {
     $("manualServings").value = "1";
   };
   
-  // Metrics
   $("saveMetricsBtn").onclick = saveDayMetrics;
   
-  // Notes toggle
   $("notesToggle").onclick = () => {
     $("notesToggle").classList.toggle("expanded");
     $("notesContent").classList.toggle("hidden");
   };
   
-  // Save notes
   $("saveNotesBtn").onclick = saveDayNotes;
-  
-  // Import defaults
   $("btnImportDefaults").onclick = importDefaults;
-  
-  // Copy previous day
   $("copyPrevDayBtn").onclick = copyPreviousDay;
   
-  // Date navigation
   $("prevDateBtn").onclick = () => {
     state.currentDate.setDate(state.currentDate.getDate() - 1);
     render();
@@ -1167,7 +1353,6 @@ async function init() {
     render();
   };
   
-  // Theme toggle
   $("themeToggle").onclick = () => {
     const current = document.documentElement.getAttribute("data-theme");
     const next = current === "dark" ? "light" : "dark";
@@ -1175,29 +1360,10 @@ async function init() {
     localStorage.setItem("mt_theme", next);
   };
   
-  // Stats view
-  $("btnStats").onclick = () => {
-    renderStats();
-    $("nutritionView").classList.add("hidden");
-    $("workoutView").classList.add("hidden");
-    document.querySelector(".main-nav").classList.add("hidden");
-    $("statsView").classList.remove("hidden");
-  };
-  
-  $("closeStatsBtn").onclick = () => {
-    $("statsView").classList.add("hidden");
-    document.querySelector(".main-nav").classList.remove("hidden");
-    if (state.currentView === 'workout') {
-      $("workoutView").classList.remove("hidden");
-    } else {
-      $("nutritionView").classList.remove("hidden");
-    }
-  };
-  
-  // Export
+  $("btnStats").onclick = () => switchView('stats');
+  $("closeStatsBtn").onclick = () => switchView(state.lastMainView || 'nutrition');
   $("exportDataBtn").onclick = exportToCSV;
   
-  // Settings
   $("btnSettings").onclick = () => {
     renderSettingsLibrary();
     updateTargetInputs();
@@ -1208,45 +1374,47 @@ async function init() {
   $("saveTargetsBtn").onclick = saveTargets;
   $("libSearch").addEventListener("input", renderSettingsLibrary);
   
-  // Tabs
+  // Plate Calc Event Listeners
+  $("calcTargetWeight").addEventListener("input", updatePlateCalc);
+  $("calcBarWeight").addEventListener("input", updatePlateCalc);
+  $("closePlateCalcBtn").onclick = () => $("plateCalcModal").close();
+
   document.querySelectorAll(".tab-btn").forEach(btn => {
     btn.onclick = () => {
-      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-      document.querySelectorAll(".tab-content").forEach(c => c.classList.add("hidden"));
+      // Ignore manual entry internal tabs
+      if (btn.id === 'btnSingleEntry' || btn.id === 'btnBulkEntry') return;
+
+      document.querySelectorAll(".tabs > .tab-btn:not(#btnSingleEntry):not(#btnBulkEntry)").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".card.p-0 > .tab-content").forEach(c => c.classList.add("hidden"));
       btn.classList.add("active");
       const tabId = `tab-${btn.dataset.tab}`;
       $(tabId).classList.remove("hidden");
       
-      // Render recents when tab is activated
       if (btn.dataset.tab === "recent") {
         renderRecents();
       }
     };
   });
   
-  // Keyboard shortcuts
   document.addEventListener("keydown", (e) => {
-    // Cmd/Ctrl + K to focus search
     if ((e.metaKey || e.ctrlKey) && e.key === "k") {
       e.preventDefault();
       $("mealSearch").focus();
     }
     
-    // Enter to add meal when search is focused
     if (e.key === "Enter" && document.activeElement === $("mealSearch")) {
       e.preventDefault();
       $("addMealBtn").click();
     }
     
-    // Escape to close modals
     if (e.key === "Escape") {
       $("settingsModal").close();
       $("editLibModal").close();
       $("editModal").close();
+      $("plateCalcModal").close();
     }
   });
   
-  // Close modals on backdrop click
   document.querySelectorAll("dialog").forEach(dialog => {
     dialog.addEventListener("click", (e) => {
       if (e.target === dialog) {
@@ -1255,19 +1423,33 @@ async function init() {
     });
   });
   
-  // === MAIN NAVIGATION ===
-  document.querySelectorAll(".main-nav-btn").forEach(btn => {
-    btn.onclick = () => {
-      document.querySelectorAll(".main-nav-btn").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      state.currentView = btn.dataset.view;
-      $("nutritionView").classList.toggle("hidden", state.currentView !== 'nutrition');
-      $("workoutView").classList.toggle("hidden", state.currentView !== 'workout');
-      if (state.currentView === 'workout') renderWorkoutView();
-    };
+  document.querySelectorAll(".main-nav-btn, .bottom-nav-btn[data-view]").forEach(btn => {
+    btn.onclick = () => switchView(btn.dataset.view);
   });
+  
+  const bottomSettings = $("bottomNavSettings");
+  if (bottomSettings) {
+    bottomSettings.onclick = () => $("btnSettings").click();
+  }
+  
+  const updateSyncStatus = () => {
+    const el = $("syncStatus");
+    if (navigator.onLine) {
+      el.innerHTML = '<span class="sync-dot"></span><span>Synced</span>';
+      el.classList.remove("offline");
+    } else {
+      el.innerHTML = '<span class="sync-dot offline-dot"></span><span>Offline — will sync</span>';
+      el.classList.add("offline");
+    }
+  };
+  window.addEventListener("online", () => { updateSyncStatus(); toast("Back online — syncing"); });
+  window.addEventListener("offline", updateSyncStatus);
+  updateSyncStatus();
+  
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    navigator.serviceWorker.register("./sw.js").catch(e => console.warn("SW registration failed:", e));
+  }
 
-  // === SETTINGS TABS ===
   document.querySelectorAll(".settings-tab-btn").forEach(btn => {
     btn.onclick = () => {
       document.querySelectorAll(".settings-tab-btn").forEach(b => b.classList.remove("active"));
@@ -1278,7 +1460,6 @@ async function init() {
     };
   });
 
-  // === WORKOUT DATE NAVIGATION ===
   $("woPrevDateBtn").onclick = () => {
     state.workoutDate.setDate(state.workoutDate.getDate() - 1);
     state.expandedExercises = new Set();
@@ -1304,7 +1485,6 @@ async function init() {
     renderWorkoutView();
   };
 
-  // === WORKOUT ACTIONS ===
   $("woStartBtn").onclick = startWorkout;
   $("woFinishBtn").onclick = finishWorkout;
   $("woSkipRest").onclick = skipRestTimer;
@@ -1313,13 +1493,13 @@ async function init() {
     $("addExSets").value = "3";
     $("addExReps").value = "";
     $("addExBodyPart").value = "";
+    $("addExEquipment").value = "";
     $("addExNotes").value = "";
     $("addExerciseModal").showModal();
   };
   $("closeAddExerciseBtn").onclick = () => $("addExerciseModal").close();
   $("addExSubmitBtn").onclick = addExerciseToWorkout;
 
-  // === SCHEDULE EDITOR ===
   document.querySelectorAll(".sched-day-btn").forEach(btn => {
     btn.onclick = () => {
       document.querySelectorAll(".sched-day-btn").forEach(b => b.classList.remove("active"));
@@ -1331,6 +1511,24 @@ async function init() {
   $("schedSaveBtn").onclick = saveScheduleDay;
 
   render();
+}
+
+function switchView(view) {
+  if (state.currentView !== 'stats') state.lastMainView = state.currentView;
+  state.currentView = view;
+  
+  $("nutritionView").classList.toggle("hidden", view !== 'nutrition');
+  $("workoutView").classList.toggle("hidden", view !== 'workout');
+  $("statsView").classList.toggle("hidden", view !== 'stats');
+  document.querySelector(".main-nav").classList.toggle("hidden", view === 'stats');
+  
+  document.querySelectorAll(".main-nav-btn, .bottom-nav-btn[data-view]").forEach(b => {
+    b.classList.toggle("active", b.dataset.view === view);
+  });
+  
+  if (view === 'workout') renderWorkoutView();
+  if (view === 'stats') renderStats();
+  window.scrollTo({ top: 0, behavior: "instant" });
 }
 
 function render() {
@@ -1347,40 +1545,33 @@ function render() {
 // WORKOUT TRACKING
 // ============================================
 
-// Get the day-of-week name for a date
 function getDayName(d) {
   return d.toLocaleDateString('en-US', { weekday: 'long' });
 }
 
-// Get workout date string
 function getWorkoutDateStr() {
   return getLocalDate(state.workoutDate);
 }
 
-// Get the workout log for the current workout date
 function getWorkoutLog() {
   const dateStr = getWorkoutDateStr();
   return state.workoutLogs.find(l => l.date === dateStr);
 }
 
-// Get the schedule template for a given day name
 function getScheduleForDay(dayName) {
   return state.workoutSchedule[dayName] || null;
 }
 
-// Get exercises for current workout date (merge template + existing log)
 function getCurrentWorkoutData() {
   const dateStr = getWorkoutDateStr();
   const existingLog = getWorkoutLog();
   const dayName = getDayName(state.workoutDate);
   const template = getScheduleForDay(dayName);
   
-  // If there's an existing saved log for this date, use it
   if (existingLog && existingLog.exercises && existingLog.exercises.length > 0) {
     return existingLog;
   }
   
-  // Otherwise build from template
   if (template && !template.restDay && template.exercises && template.exercises.length > 0) {
     return {
       date: dateStr,
@@ -1389,6 +1580,8 @@ function getCurrentWorkoutData() {
       focus: template.focus || '',
       exercises: template.exercises.map(ex => ({
         name: ex.name || '',
+        type: ex.type || 'strength',
+        equipment: ex.equipment || '',
         targetSets: ex.sets || '3',
         targetReps: ex.reps || '',
         bodyPart: ex.bodyPart || '',
@@ -1397,13 +1590,12 @@ function getCurrentWorkoutData() {
         fromSchedule: true,
         completed: false,
         sets: Array.from({ length: parseInt(ex.sets) || 3 }, () => ({
-          weight: '', reps: '', rpe: '', completed: false
+          weight: '', reps: '', rpe: '', duration: '', speed: '', incline: '', completed: false
         }))
       }))
     };
   }
   
-  // Rest day or no schedule
   return {
     date: dateStr,
     dayName: dayName,
@@ -1414,7 +1606,6 @@ function getCurrentWorkoutData() {
   };
 }
 
-// Save the current workout log to Firebase
 async function saveWorkoutLog(data) {
   if (!state.user) return;
   const dateStr = getWorkoutDateStr();
@@ -1422,7 +1613,6 @@ async function saveWorkoutLog(data) {
   await setDoc(ref, { ...data, date: dateStr }, { merge: true });
 }
 
-// Get previous performance for an exercise (from past logs)
 function getPreviousPerformance(exerciseName) {
   const todayStr = getWorkoutDateStr();
   const nameLower = exerciseName.toLowerCase();
@@ -1432,13 +1622,15 @@ function getPreviousPerformance(exerciseName) {
     if (!log.exercises) continue;
     for (const ex of log.exercises) {
       if (ex.name.toLowerCase() === nameLower) {
-        // Find the best completed set
-        const completedSets = (ex.sets || []).filter(s => s.completed && s.weight && s.reps);
+        const completedSets = (ex.sets || []).filter(s => s.completed && (s.weight || s.duration));
         if (completedSets.length > 0) {
-          const best = completedSets.reduce((a, b) => 
-            (parseFloat(a.weight) || 0) > (parseFloat(b.weight) || 0) ? a : b
-          );
-          return { weight: best.weight, reps: best.reps, date: log.date };
+          if (ex.type === 'cardio') {
+             const best = completedSets.reduce((a, b) => (parseFloat(a.duration) || 0) > (parseFloat(b.duration) || 0) ? a : b);
+             return { duration: best.duration, date: log.date };
+          } else {
+             const best = completedSets.reduce((a, b) => (parseFloat(a.weight) || 0) > (parseFloat(b.weight) || 0) ? a : b);
+             return { weight: best.weight, reps: best.reps, date: log.date };
+          }
         }
       }
     }
@@ -1446,7 +1638,23 @@ function getPreviousPerformance(exerciseName) {
   return null;
 }
 
-// Get the last notes for an exercise (from past logs)
+function getPreviousSets(exerciseName) {
+  const todayStr = getWorkoutDateStr();
+  const nameLower = exerciseName.toLowerCase();
+  
+  for (const log of state.workoutLogs) {
+    if (log.date === todayStr) continue;
+    if (!log.exercises) continue;
+    for (const ex of log.exercises) {
+      if (ex.name.toLowerCase() === nameLower) {
+        const done = (ex.sets || []).filter(s => s.completed && (s.weight || s.reps || s.duration));
+        if (done.length > 0) return done;
+      }
+    }
+  }
+  return [];
+}
+
 function getLastExerciseNotes(exerciseName) {
   const todayStr = getWorkoutDateStr();
   const nameLower = exerciseName.toLowerCase();
@@ -1463,7 +1671,6 @@ function getLastExerciseNotes(exerciseName) {
   return null;
 }
 
-// Render the full workout view
 function renderWorkoutView() {
   const d = state.workoutDate;
   const now = new Date();
@@ -1481,14 +1688,12 @@ function renderWorkoutView() {
   $("woDateLabel").textContent = label;
   $("woDateSub").textContent = `${getDayName(d)} · ${dStr}`;
   
-  // Quick nav label
   const oneWeekAgo = new Date(d);
   oneWeekAgo.setDate(d.getDate() - 7);
   $("woQuickNavLabel").textContent = `${getDayName(d)}`;
   
   const data = getCurrentWorkoutData();
   
-  // Day header
   if (data.title) {
     $("woDayTitle").textContent = `${getDayName(d)} – ${data.title}`;
   } else {
@@ -1496,18 +1701,14 @@ function renderWorkoutView() {
   }
   $("woDayFocus").textContent = data.focus || '';
   
-  // Show/hide rest state
   const isRest = data.restDay || (!data.exercises || data.exercises.length === 0);
   $("woRestState").classList.toggle("hidden", !isRest || (data.exercises && data.exercises.length > 0));
   
-  // Render exercise cards
   renderExerciseCards(data);
   
-  // Show timer bar only for today or if workout is active
   const isToday = dStr === todayStr;
   $("woTimerBar").style.display = isToday ? 'flex' : 'none';
   
-  // Update summary if workout finished
   const existingLog = getWorkoutLog();
   if (existingLog && existingLog.endTime) {
     updateWorkoutSummary(existingLog);
@@ -1517,14 +1718,12 @@ function renderWorkoutView() {
   }
 }
 
-// Render exercise cards
 function renderExerciseCards(data) {
   const container = $("woExerciseList");
   container.innerHTML = '';
   
   if (!data.exercises || data.exercises.length === 0) return;
   
-  // If no expand state tracked yet, expand all by default
   if (state.expandedExercises.size === 0 && data.exercises.length > 0) {
     data.exercises.forEach((_, i) => state.expandedExercises.add(i));
   }
@@ -1535,31 +1734,67 @@ function renderExerciseCards(data) {
     card.className = `wo-exercise-card${ex.completed ? ' completed' : ''}${isExpanded ? ' expanded' : ''}`;
     
     const prev = getPreviousPerformance(ex.name);
+    const prevSets = getPreviousSets(ex.name);
     const lastNotes = getLastExerciseNotes(ex.name);
     const isSuperset = ex.name.toLowerCase().includes('superset');
     
-    // Build note indicator for collapsed state
     const noteText = ex.notes || ex.scheduleNotes || '';
     const noteIndicatorHtml = noteText ? 
-      `<div class="wo-ex-note-indicator"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>${noteText.substring(0, 50)}${noteText.length > 50 ? '...' : ''}</div>` : '';
+      `<div class="wo-ex-note-indicator"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>${esc(noteText.substring(0, 50))}${noteText.length > 50 ? '...' : ''}</div>` : '';
     
-    // Schedule notes badge (shown if exercise came from schedule with notes)
     const schedNoteHtml = ex.scheduleNotes ? 
-      `<div class="wo-sched-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${ex.scheduleNotes}</div>` : '';
+      `<div class="wo-sched-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${esc(ex.scheduleNotes)}</div>` : '';
     
+    let tableHTML = '';
+    if (ex.type === 'cardio') {
+      tableHTML = `
+        <table class="wo-set-table">
+          <thead><tr><th>Interval</th><th class="cardio-header">Duration (min)</th><th class="cardio-header">Speed</th><th class="cardio-header">Incline</th><th>✓</th></tr></thead>
+          <tbody>
+            ${(ex.sets || []).map((s, sIdx) => `
+              <tr>
+                <td>${sIdx + 1}</td>
+                <td><input type="number" inputmode="decimal" value="${esc(s.duration || '')}" data-ex="${exIdx}" data-set="${sIdx}" data-field="duration" placeholder="e.g. 15" /></td>
+                <td><input type="number" inputmode="decimal" value="${esc(s.speed || '')}" data-ex="${exIdx}" data-set="${sIdx}" data-field="speed" placeholder="e.g. 3.5" /></td>
+                <td><input type="number" inputmode="decimal" value="${esc(s.incline || '')}" data-ex="${exIdx}" data-set="${sIdx}" data-field="incline" placeholder="e.g. 12" /></td>
+                <td><div class="wo-set-check${s.completed ? ' checked' : ''}" data-ex="${exIdx}" data-set="${sIdx}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+    } else {
+      tableHTML = `
+        <table class="wo-set-table">
+          <thead><tr><th>Set</th><th>Weight (lbs)</th><th>Reps</th><th>RPE</th><th>✓</th></tr></thead>
+          <tbody>
+            ${(ex.sets || []).map((s, sIdx) => {
+              const ph = prevSets[sIdx] || null;
+              return `
+              <tr>
+                <td>${sIdx + 1}</td>
+                <td>
+                  <div class="weight-input-wrapper">
+                    <input type="number" inputmode="decimal" value="${esc(s.weight || '')}" data-ex="${exIdx}" data-set="${sIdx}" data-field="weight" placeholder="${ph && ph.weight ? esc(ph.weight) : '—'}" />
+                    <button class="btn-plate-calc" data-weight-val="${esc(s.weight || (ph ? ph.weight : ''))}" title="Calculate Plates"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg></button>
+                  </div>
+                </td>
+                <td><input type="number" inputmode="numeric" value="${esc(s.reps || '')}" data-ex="${exIdx}" data-set="${sIdx}" data-field="reps" placeholder="${ph && ph.reps ? esc(ph.reps) : '—'}" /></td>
+                <td><input type="number" inputmode="numeric" value="${esc(s.rpe || '')}" data-ex="${exIdx}" data-set="${sIdx}" data-field="rpe" placeholder="—" min="1" max="10" /></td>
+                <td><div class="wo-set-check${s.completed ? ' checked' : ''}" data-ex="${exIdx}" data-set="${sIdx}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div></td>
+              </tr>
+            `;}).join('')}
+          </tbody>
+        </table>`;
+    }
+
     card.innerHTML = `
       <div class="wo-ex-header" data-idx="${exIdx}">
-        <div class="wo-ex-check${ex.completed ? ' checked' : ''}" data-ex-idx="${exIdx}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
+        <div class="wo-ex-check${ex.completed ? ' checked' : ''}" data-ex-idx="${exIdx}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
         <div class="wo-ex-info">
-          <div class="wo-ex-name">
-            ${ex.name}
-            ${isSuperset ? '<span class="wo-ex-badge">SS</span>' : ''}
-          </div>
+          <div class="wo-ex-name">${esc(ex.name)} ${isSuperset ? '<span class="wo-ex-badge">SS</span>' : ''}</div>
           <div class="wo-ex-meta">
-            ${ex.targetSets || '?'}×${ex.targetReps || '?'} · ${ex.bodyPart || 'General'}
-            ${prev ? ` · <span class="wo-ex-prev">Last: ${prev.weight}lbs × ${prev.reps}</span>` : ''}
+            ${ex.equipment ? `<b>${esc(ex.equipment)}</b> · ` : ''} ${esc(ex.targetSets || '?')}×${esc(ex.targetReps || '?')}
+            ${prev ? ` · <span class="wo-ex-prev">Last: ${esc(prev.weight || prev.duration)} ${ex.type === 'cardio' ? 'min' : 'lbs'}</span>` : ''}
           </div>
           ${noteIndicatorHtml}
         </div>
@@ -1569,42 +1804,25 @@ function renderExerciseCards(data) {
       <div class="wo-ex-body">
         ${schedNoteHtml}
         <div class="wo-ex-notes-section">
-          <div class="wo-ex-notes-label">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            Notes${lastNotes ? ` <span style="font-weight:400;color:var(--text-muted)">(last note from ${lastNotes.date})</span>` : ''}
-          </div>
-          <textarea data-ex-idx="${exIdx}" placeholder="e.g. Superset with curls, focus on form, felt strong today...">${ex.notes || (lastNotes ? lastNotes.notes : '')}</textarea>
+          <div class="wo-ex-notes-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Notes</div>
+          <textarea data-ex-idx="${exIdx}" placeholder="Exercise notes...">${esc(ex.notes || (lastNotes ? lastNotes.notes : ''))}</textarea>
         </div>
-        <table class="wo-set-table">
-          <thead><tr><th>Set</th><th>Weight (lbs)</th><th>Reps</th><th>RPE</th><th>✓</th></tr></thead>
-          <tbody>
-            ${(ex.sets || []).map((s, sIdx) => `
-              <tr>
-                <td>${sIdx + 1}</td>
-                <td><input type="number" inputmode="decimal" value="${s.weight}" data-ex="${exIdx}" data-set="${sIdx}" data-field="weight" placeholder="—" /></td>
-                <td><input type="number" inputmode="numeric" value="${s.reps}" data-ex="${exIdx}" data-set="${sIdx}" data-field="reps" placeholder="—" /></td>
-                <td><input type="number" inputmode="numeric" value="${s.rpe}" data-ex="${exIdx}" data-set="${sIdx}" data-field="rpe" placeholder="—" min="1" max="10" /></td>
-                <td>
-                  <div class="wo-set-check${s.completed ? ' checked' : ''}" data-ex="${exIdx}" data-set="${sIdx}">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                  </div>
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        <div class="wo-add-set-row">
-          <button class="wo-add-set-btn" data-ex-idx="${exIdx}">+ Add Set</button>
-        </div>
+        ${tableHTML}
+        <div class="wo-add-set-row"><button class="wo-add-set-btn" data-ex-idx="${exIdx}">+ Add ${ex.type === 'cardio' ? 'Interval' : 'Set'}</button></div>
       </div>
     `;
     
     container.appendChild(card);
   });
   
-  // Event delegation for all workout interactions
   container.onclick = (e) => {
-    // Toggle card expand/collapse
+    const plateBtn = e.target.closest('.btn-plate-calc');
+    if (plateBtn) {
+      const inputVal = plateBtn.previousElementSibling?.value || plateBtn.dataset.weightVal;
+      openPlateCalc(num(inputVal));
+      return;
+    }
+
     const header = e.target.closest('.wo-ex-header');
     if (header && !e.target.closest('.wo-ex-check') && !e.target.closest('.wo-remove-ex-btn')) {
       const card = header.closest('.wo-exercise-card');
@@ -1618,28 +1836,24 @@ function renderExerciseCards(data) {
       return;
     }
     
-    // Exercise completion checkbox
     const exCheck = e.target.closest('.wo-ex-check[data-ex-idx]');
     if (exCheck) {
       handleExerciseComplete(parseInt(exCheck.dataset.exIdx));
       return;
     }
     
-    // Set completion checkbox
     const setCheck = e.target.closest('.wo-set-check');
     if (setCheck) {
       handleSetComplete(parseInt(setCheck.dataset.ex), parseInt(setCheck.dataset.set));
       return;
     }
     
-    // Add set button
     const addSetBtn = e.target.closest('.wo-add-set-btn');
     if (addSetBtn) {
       addSet(parseInt(addSetBtn.dataset.exIdx));
       return;
     }
     
-    // Remove exercise button
     const removeBtn = e.target.closest('.wo-remove-ex-btn');
     if (removeBtn) {
       removeExercise(parseInt(removeBtn.dataset.exIdx));
@@ -1647,10 +1861,8 @@ function renderExerciseCards(data) {
     }
   };
   
-  // Input change delegation with debounced saves
   let setInputTimer = null;
   container.addEventListener('input', (e) => {
-    // Set inputs (weight, reps, rpe)
     if (e.target.dataset.ex !== undefined && e.target.dataset.set !== undefined) {
       clearTimeout(setInputTimer);
       setInputTimer = setTimeout(() => {
@@ -1663,13 +1875,11 @@ function renderExerciseCards(data) {
       }, 600);
     }
     
-    // Exercise notes
     if (e.target.closest('.wo-ex-notes-section') && e.target.tagName === 'TEXTAREA') {
       handleExerciseNoteChange(parseInt(e.target.dataset.exIdx), e.target.value);
     }
   });
   
-  // Focus/blur on set inputs to prevent re-render while typing (mobile keyboard fix)
   container.addEventListener('focusin', (e) => {
     if (e.target.matches('.wo-set-table input')) {
       state.isEditingWorkout = true;
@@ -1677,13 +1887,11 @@ function renderExerciseCards(data) {
   });
   container.addEventListener('focusout', (e) => {
     if (e.target.matches('.wo-set-table input')) {
-      // Small delay so any pending save triggers before we allow re-render
       setTimeout(() => { state.isEditingWorkout = false; }, 1000);
     }
   });
 }
 
-// Handle set input change
 function handleSetInputChange(exIdx, setIdx, field, value) {
   const data = getCurrentWorkoutData();
   if (!data.exercises[exIdx]) return;
@@ -1691,7 +1899,6 @@ function handleSetInputChange(exIdx, setIdx, field, value) {
   saveWorkoutLog(data);
 }
 
-// Handle exercise note change (debounced save)
 let noteDebounceTimer = null;
 function handleExerciseNoteChange(exIdx, value) {
   const data = getCurrentWorkoutData();
@@ -1702,7 +1909,6 @@ function handleExerciseNoteChange(exIdx, value) {
   noteDebounceTimer = setTimeout(() => saveWorkoutLog(data), 800);
 }
 
-// Handle set completion
 function handleSetComplete(exIdx, setIdx) {
   const data = getCurrentWorkoutData();
   if (!data.exercises[exIdx]) return;
@@ -1710,11 +1916,10 @@ function handleSetComplete(exIdx, setIdx) {
   set.completed = !set.completed;
   saveWorkoutLog(data);
   
-  // Start rest timer if completing a set
   if (set.completed) {
+    vibrate(15);
     startRestTimer();
     
-    // Auto-start prompt: if no active workout and this is the first completed set in the whole workout
     if (!state.activeWorkout && !state.timerPromptShown) {
       const anyPreviouslyCompleted = data.exercises.some((ex, ei) =>
         (ex.sets || []).some((s, si) => s.completed && !(ei === exIdx && si === setIdx))
@@ -1735,19 +1940,16 @@ function handleSetComplete(exIdx, setIdx) {
   renderWorkoutView();
 }
 
-// Handle exercise-level completion
 function handleExerciseComplete(exIdx) {
   const data = getCurrentWorkoutData();
   if (!data.exercises[exIdx]) return;
   const ex = data.exercises[exIdx];
   ex.completed = !ex.completed;
-  // Mark all sets
   if (ex.sets) {
     ex.sets.forEach(s => { s.completed = ex.completed; });
   }
   saveWorkoutLog(data);
   
-  // Check if ALL exercises are now completed — prompt to finish workout
   if (ex.completed && state.activeWorkout) {
     const allDone = data.exercises.every(e => e.completed);
     if (allDone) {
@@ -1762,6 +1964,7 @@ function handleExerciseComplete(exIdx) {
           $("addExSets").value = "3";
           $("addExReps").value = "";
           $("addExBodyPart").value = "";
+          $("addExEquipment").value = "";
           $("addExNotes").value = "";
           $("addExerciseModal").showModal();
         }
@@ -1772,7 +1975,6 @@ function handleExerciseComplete(exIdx) {
   renderWorkoutView();
 }
 
-// Show a workout action prompt (lightweight confirm dialog)
 function showWorkoutPrompt(title, message, primaryLabel, secondaryLabel, onPrimary, onSecondary) {
   const dialog = $("woPromptDialog");
   $("woPromptTitle").textContent = title;
@@ -1793,77 +1995,80 @@ function showWorkoutPrompt(title, message, primaryLabel, secondaryLabel, onPrima
   dialog.showModal();
 }
 
-// Add a set to an exercise
 function addSet(exIdx) {
   const data = getCurrentWorkoutData();
   if (!data.exercises[exIdx]) return;
-  data.exercises[exIdx].sets.push({ weight: '', reps: '', rpe: '', completed: false });
-  // Ensure this exercise stays expanded
+  const ex = data.exercises[exIdx];
+  
+  if (ex.type === 'cardio') {
+    ex.sets.push({ duration: '', speed: '', incline: '', completed: false });
+  } else {
+    ex.sets.push({ weight: '', reps: '', rpe: '', completed: false });
+  }
+  
   state.expandedExercises.add(exIdx);
   saveWorkoutLog(data);
   renderWorkoutView();
 }
 
-// Remove an ad-hoc exercise
 function removeExercise(exIdx) {
   const data = getCurrentWorkoutData();
   data.exercises.splice(exIdx, 1);
-  // Rebuild expanded set with shifted indices
   const newExpanded = new Set();
   state.expandedExercises.forEach(i => {
     if (i < exIdx) newExpanded.add(i);
     else if (i > exIdx) newExpanded.add(i - 1);
-    // Skip the removed index
   });
   state.expandedExercises = newExpanded;
   saveWorkoutLog(data);
   renderWorkoutView();
 }
 
-// Add exercise from modal
 function addExerciseToWorkout() {
   const name = $("addExName").value.trim();
   if (!name) { toast("Enter an exercise name"); return; }
   
-  const sets = parseInt($("addExSets").value) || 3;
+  const type = $("addExType").value || 'strength';
+  const equipment = $("addExEquipment").value.trim();
+  const sets = parseInt($("addExSets").value) || 1;
   const reps = $("addExReps").value.trim();
   const bodyPart = $("addExBodyPart").value.trim();
   const notes = $("addExNotes").value.trim();
   
   const data = getCurrentWorkoutData();
   data.exercises = data.exercises || [];
+  
+  let setStructure;
+  if (type === 'cardio') {
+    setStructure = Array.from({ length: sets }, () => ({ duration: '', speed: '', incline: '', completed: false }));
+  } else {
+    setStructure = Array.from({ length: sets }, () => ({ weight: '', reps: '', rpe: '', completed: false }));
+  }
+
   data.exercises.push({
-    name,
+    name, type, equipment,
     targetSets: String(sets),
-    targetReps: reps,
-    bodyPart,
+    targetReps: type === 'cardio' ? 'N/A' : reps,
+    bodyPart: type === 'cardio' ? 'Cardio' : bodyPart,
     notes,
     fromSchedule: false,
     completed: false,
-    sets: Array.from({ length: sets }, () => ({
-      weight: '', reps: '', rpe: '', completed: false
-    }))
+    sets: setStructure
   });
   
-  // Remove restDay flag since we're adding exercises
   data.restDay = false;
-  
-  // Auto-expand the newly added exercise
   state.expandedExercises.add(data.exercises.length - 1);
-  
   saveWorkoutLog(data);
   $("addExerciseModal").close();
   toast(`Added ${name}`);
   renderWorkoutView();
 }
 
-// Start / Finish Workout
 function startWorkout() {
   state.activeWorkout = { startTime: Date.now() };
   $("woStartBtn").classList.add("hidden");
   $("woFinishBtn").classList.remove("hidden");
   
-  // Start duration timer
   state.durationInterval = setInterval(() => {
     const elapsed = Math.floor((Date.now() - state.activeWorkout.startTime) / 1000);
     $("woDuration").textContent = formatDuration(elapsed);
@@ -1906,20 +2111,42 @@ function formatDuration(secs) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-// Rest Timer
+function playRestChime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [880, 1174.66].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = freq;
+      osc.type = "sine";
+      gain.gain.setValueAtTime(0.001, ctx.currentTime + i * 0.18);
+      gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + i * 0.18 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.18 + 0.16);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(ctx.currentTime + i * 0.18);
+      osc.stop(ctx.currentTime + i * 0.18 + 0.2);
+    });
+  } catch (e) { }
+}
+
 function startRestTimer() {
   clearInterval(state.restTimerInterval);
   state.restTimeLeft = state.targets.restTimer || 60;
   $("woRestTimerArea").style.display = 'flex';
   $("woRestTime").textContent = formatDuration(state.restTimeLeft);
+  $("woRestTime").classList.remove("urgent");
   
   state.restTimerInterval = setInterval(() => {
     state.restTimeLeft--;
     if (state.restTimeLeft <= 0) {
       clearInterval(state.restTimerInterval);
       $("woRestTimerArea").style.display = 'none';
+      vibrate([100, 60, 100]);
+      playRestChime();
+      toast("Rest over — next set! 💪");
       return;
     }
+    $("woRestTime").classList.toggle("urgent", state.restTimeLeft <= 5);
     $("woRestTime").textContent = formatDuration(state.restTimeLeft);
   }, 1000);
 }
@@ -1929,16 +2156,17 @@ function skipRestTimer() {
   $("woRestTimerArea").style.display = 'none';
 }
 
-// Workout Summary
 function updateWorkoutSummary(data) {
   if (!data.exercises) return;
   let totalSets = 0, totalVolume = 0;
   const exercisesDone = data.exercises.filter(ex => {
     const doneSets = (ex.sets || []).filter(s => s.completed);
     totalSets += doneSets.length;
-    doneSets.forEach(s => {
-      totalVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
-    });
+    if (ex.type !== 'cardio') {
+      doneSets.forEach(s => {
+        totalVolume += (parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0);
+      });
+    }
     return doneSets.length > 0;
   }).length;
   
@@ -1965,13 +2193,11 @@ function renderScheduleEditor() {
   $("schedFocus").value = data.focus || '';
   $("schedRestDay").checked = data.restDay || false;
   
-  // Update day tabs indicators
   document.querySelectorAll('.sched-day-btn').forEach(btn => {
     const d = state.workoutSchedule[btn.dataset.day];
     btn.classList.toggle('has-exercises', !!(d && d.exercises && d.exercises.length > 0 && !d.restDay));
   });
   
-  // Render exercise list
   const list = $("schedExerciseList");
   list.innerHTML = '';
   
@@ -1981,22 +2207,21 @@ function renderScheduleEditor() {
     row.className = 'sched-exercise-row';
     row.innerHTML = `
       <div class="sched-ex-main">
-        <input type="text" value="${ex.name || ''}" placeholder="Exercise name" data-idx="${idx}" data-field="name" />
-        <input type="text" value="${ex.sets || ''}" placeholder="Sets" data-idx="${idx}" data-field="sets" class="sched-input-sm" />
-        <input type="text" value="${ex.reps || ''}" placeholder="Reps" data-idx="${idx}" data-field="reps" class="sched-input-sm" />
-        <input type="text" value="${ex.bodyPart || ''}" placeholder="Body part" data-idx="${idx}" data-field="bodyPart" />
+        <input type="text" value="${esc(ex.name || '')}" placeholder="Exercise name" data-idx="${idx}" data-field="name" />
+        <input type="text" value="${esc(ex.sets || '')}" placeholder="Sets" data-idx="${idx}" data-field="sets" class="sched-input-sm" inputmode="numeric" />
+        <input type="text" value="${esc(ex.reps || '')}" placeholder="Reps" data-idx="${idx}" data-field="reps" class="sched-input-sm" />
+        <input type="text" value="${esc(ex.bodyPart || '')}" placeholder="Body part" data-idx="${idx}" data-field="bodyPart" />
         <button class="sched-remove-btn" data-idx="${idx}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
       <div class="sched-ex-notes">
-        <input type="text" value="${ex.notes || ''}" placeholder="Notes (e.g. superset with curls, slow eccentric…)" data-idx="${idx}" data-field="notes" class="sched-notes-input" />
+        <input type="text" value="${esc(ex.notes || '')}" placeholder="Notes (e.g. superset with curls, slow eccentric…)" data-idx="${idx}" data-field="notes" class="sched-notes-input" />
       </div>
     `;
     list.appendChild(row);
   });
   
-  // Remove button handlers
   list.querySelectorAll('.sched-remove-btn').forEach(btn => {
     btn.onclick = () => {
       const dayName = getSelectedScheduleDay();
@@ -2017,7 +2242,6 @@ function addScheduleExerciseRow() {
   state.workoutSchedule[dayName] = { ...data, exercises };
   renderScheduleEditor();
   
-  // Focus the new row's name input
   const rows = $("schedExerciseList").querySelectorAll('.sched-exercise-row');
   if (rows.length > 0) {
     rows[rows.length - 1].querySelector('input').focus();
@@ -2028,12 +2252,10 @@ async function saveScheduleDay() {
   if (!state.user) return;
   const dayName = getSelectedScheduleDay();
   
-  // Read current values from the form
   const title = $("schedTitle").value.trim();
   const focus = $("schedFocus").value.trim();
   const restDay = $("schedRestDay").checked;
   
-  // Read exercises from DOM
   const exerciseRows = $("schedExerciseList").querySelectorAll('.sched-exercise-row');
   const exercises = Array.from(exerciseRows).map(row => ({
     name: row.querySelector('[data-field="name"]').value.trim(),
@@ -2041,7 +2263,7 @@ async function saveScheduleDay() {
     reps: row.querySelector('[data-field="reps"]').value.trim(),
     bodyPart: row.querySelector('[data-field="bodyPart"]').value.trim(),
     notes: row.querySelector('[data-field="notes"]')?.value.trim() || ''
-  })).filter(ex => ex.name); // Remove empty rows
+  })).filter(ex => ex.name);
   
   const data = { title, focus, restDay, exercises };
   
@@ -2054,16 +2276,14 @@ async function saveScheduleDay() {
   renderWorkoutView();
 }
 
-// Start app
 document.addEventListener("DOMContentLoaded", init);
 
 // === NUTRITION LABEL SCANNER (Tesseract.js OCR) ===
 
 let scannerStream = null;
-let scanTargetContext = null; // 'manual' or 'library'
+let scanTargetContext = null; 
 let tesseractWorker = null;
 
-// Load Tesseract.js dynamically
 async function loadTesseract() {
   if (window.Tesseract) return window.Tesseract;
   
@@ -2076,12 +2296,10 @@ async function loadTesseract() {
   });
 }
 
-// Open scanner modal
 function openScanner(targetContext) {
   scanTargetContext = targetContext;
   const modal = $("scannerModal");
   
-  // Reset UI state
   $("cameraContainer").classList.remove("hidden");
   $("previewContainer").classList.add("hidden");
   $("scanResults").classList.add("hidden");
@@ -2094,7 +2312,6 @@ function openScanner(targetContext) {
   startCamera();
 }
 
-// Start camera stream
 async function startCamera() {
   try {
     const constraints = {
@@ -2111,14 +2328,12 @@ async function startCamera() {
     await video.play();
   } catch (err) {
     console.error("Camera error:", err);
-    // Fall back to file input
     stopCamera();
     $("cameraContainer").classList.add("hidden");
     $("fileInput").click();
   }
 }
 
-// Stop camera stream
 function stopCamera() {
   if (scannerStream) {
     scannerStream.getTracks().forEach(track => track.stop());
@@ -2128,7 +2343,6 @@ function stopCamera() {
   video.srcObject = null;
 }
 
-// Capture image from video
 function captureImage() {
   const video = $("cameraVideo");
   const canvas = document.createElement("canvas");
@@ -2140,9 +2354,7 @@ function captureImage() {
   return canvas.toDataURL("image/jpeg", 0.92);
 }
 
-// Process captured image
 async function processImage(imageDataUrl) {
-  // Show preview
   $("cameraContainer").classList.add("hidden");
   $("previewContainer").classList.remove("hidden");
   $("previewImage").src = imageDataUrl;
@@ -2152,31 +2364,22 @@ async function processImage(imageDataUrl) {
   stopCamera();
   
   try {
-    // Load Tesseract if not loaded
     const Tesseract = await loadTesseract();
     
-    // Perform OCR
     const result = await Tesseract.recognize(imageDataUrl, 'eng', {
-      logger: m => {
-        if (m.status === 'recognizing text') {
-          // Could update progress here if desired
-        }
-      }
+      logger: m => { }
     });
     
     const text = result.data.text;
     console.log("OCR Result:", text);
     
-    // Parse nutrition values from text
     const nutritionData = parseNutritionLabel(text);
     
     if (nutritionData && (nutritionData.calories || nutritionData.protein || nutritionData.carbs || nutritionData.fat)) {
-      // Show results
       $("previewOverlay").classList.add("hidden");
       $("scanResults").classList.remove("hidden");
       $("useScanBtn").classList.remove("hidden");
       
-      // Populate fields
       $("scanCalories").value = nutritionData.calories || "";
       $("scanProtein").value = nutritionData.protein || "";
       $("scanCarbs").value = nutritionData.carbs || "";
@@ -2190,9 +2393,7 @@ async function processImage(imageDataUrl) {
   }
 }
 
-// Parse nutrition label text using regex patterns
 function parseNutritionLabel(text) {
-  // Normalize text: lowercase, fix common OCR errors
   const normalizedText = text
     .toLowerCase()
     .replace(/[oO]/g, match => match === 'O' ? '0' : match)
@@ -2206,9 +2407,7 @@ function parseNutritionLabel(text) {
     fat: null
   };
   
-  // Patterns for different nutrition label formats
   const patterns = {
-    // Calories: "Calories 200", "Calories: 200", "Energy 200kcal", "200 calories"
     calories: [
       /calories[:\s]*(\d+)/i,
       /(\d+)\s*calories/i,
@@ -2217,14 +2416,12 @@ function parseNutritionLabel(text) {
       /(\d+)\s*kcal/i,
       /cal[:\s]*(\d+)/i
     ],
-    // Protein: "Protein 25g", "Protein: 25 g", "25g protein"
     protein: [
       /protein[:\s]*(\d+\.?\d*)\s*g/i,
       /(\d+\.?\d*)\s*g\s*protein/i,
       /protein[:\s]*(\d+)/i,
       /prot[:\s]*(\d+\.?\d*)/i
     ],
-    // Carbs: "Total Carbohydrate 30g", "Carbs 30g", "Carbohydrates: 30g"
     carbs: [
       /total\s*carb[a-z]*[:\s]*(\d+\.?\d*)\s*g/i,
       /carb[a-z]*[:\s]*(\d+\.?\d*)\s*g/i,
@@ -2232,7 +2429,6 @@ function parseNutritionLabel(text) {
       /carb[a-z]*[:\s]*(\d+)/i,
       /glucides[:\s]*(\d+\.?\d*)/i
     ],
-    // Fat: "Total Fat 10g", "Fat 10g", "Fat: 10 g"
     fat: [
       /total\s*fat[:\s]*(\d+\.?\d*)\s*g/i,
       /(?<!trans\s)(?<!saturated\s)fat[:\s]*(\d+\.?\d*)\s*g/i,
@@ -2242,7 +2438,6 @@ function parseNutritionLabel(text) {
     ]
   };
   
-  // Try each pattern for each nutrient
   for (const [nutrient, patternList] of Object.entries(patterns)) {
     for (const pattern of patternList) {
       const match = text.match(pattern) || normalizedText.match(pattern);
@@ -2256,7 +2451,6 @@ function parseNutritionLabel(text) {
     }
   }
   
-  // Additional validation: if calories seems too low but we have macros, estimate
   if (!result.calories && (result.protein || result.carbs || result.fat)) {
     const estimatedCal = (result.protein || 0) * 4 + (result.carbs || 0) * 4 + (result.fat || 0) * 9;
     if (estimatedCal > 0) {
@@ -2267,7 +2461,6 @@ function parseNutritionLabel(text) {
   return result;
 }
 
-// Show scan error
 function showScanError(message) {
   $("previewContainer").classList.add("hidden");
   $("scanResults").classList.add("hidden");
@@ -2277,7 +2470,6 @@ function showScanError(message) {
   $("useScanBtn").classList.add("hidden");
 }
 
-// Apply scanned values to form
 function applyScannedValues() {
   const calories = num($("scanCalories").value);
   const protein = num($("scanProtein").value);
@@ -2300,13 +2492,11 @@ function applyScannedValues() {
   toast("Values applied!");
 }
 
-// Close scanner
 function closeScanner() {
   stopCamera();
   $("scannerModal").close();
 }
 
-// Scanner event listeners
 $("scanLabelBtn").addEventListener("click", () => openScanner("manual"));
 $("scanLibLabelBtn").addEventListener("click", () => openScanner("library"));
 
@@ -2327,13 +2517,11 @@ $("retryScnBtn").addEventListener("click", () => {
   startCamera();
 });
 
-// Handle file input (fallback for devices without camera API)
 $("fileInput").addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (file) {
     const reader = new FileReader();
     reader.onload = (event) => {
-      // Show the preview container since camera isn't being used
       $("cameraContainer").classList.add("hidden");
       $("previewContainer").classList.remove("hidden");
       processImage(event.target.result);
@@ -2343,14 +2531,12 @@ $("fileInput").addEventListener("change", (e) => {
   e.target.value = "";
 });
 
-// Close scanner when modal backdrop is clicked
 $("scannerModal").addEventListener("click", (e) => {
   if (e.target === $("scannerModal")) {
     closeScanner();
   }
 });
 
-// Clean up camera when modal closes
 $("scannerModal").addEventListener("close", () => {
   stopCamera();
 });
