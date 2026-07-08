@@ -2826,3 +2826,100 @@ footer {
   margin-top: 1px;
   color: var(--primary);
 }
+
+/* ============================================
+   UI POLISH & NEW FEATURES ADDITIONS
+   ============================================ */
+
+/* --- Swipe to Delete Log Items --- */
+.log-item-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  background: var(--danger);
+}
+.log-item-background {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 20px;
+  color: white;
+  font-weight: bold;
+}
+.log-item {
+  position: relative;
+  z-index: 1;
+  background: var(--bg-input);
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+  margin-bottom: 0; /* Reset for wrapper */
+  touch-action: pan-y; /* Allows vertical scrolling, traps horizontal swipes */
+}
+.log-item.swiping {
+  transition: none;
+}
+
+/* --- Visual Plate Calculator --- */
+.plate-visualizer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  height: 120px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px;
+  overflow-x: auto;
+}
+.plate-sleeve {
+  width: 20px;
+  height: 30px;
+  background: #cbd5e1;
+  border-radius: 2px;
+  margin-right: 4px;
+}
+.plate {
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: white;
+  font-size: 0.75rem;
+  box-shadow: inset -2px 0 0 rgba(0,0,0,0.2);
+}
+/* Weight specific plate sizes & colors based on standard bumper/iron specs */
+.plate-45 { width: 30px; height: 100px; background: #1e293b; }
+.plate-35 { width: 25px; height: 90px; background: #334155; }
+.plate-25 { width: 22px; height: 75px; background: #475569; }
+.plate-10 { width: 16px; height: 50px; background: #64748b; }
+.plate-5  { width: 12px; height: 35px; background: #94a3b8; color: #000; font-size: 0.6rem;}
+.plate-2_5{ width: 10px; height: 25px; background: #cbd5e1; color: #000; font-size: 0.5rem;}
+
+/* --- Plate Calc Icon on Inputs --- */
+.weight-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.btn-plate-calc {
+  position: absolute;
+  right: 6px;
+  background: var(--bg-hover);
+  border: none;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+}
+.btn-plate-calc:hover { color: var(--primary); }
+
+/* --- Cardio Set Table Formatting --- */
+.wo-set-table th.cardio-header {
+  color: var(--primary);
+}
