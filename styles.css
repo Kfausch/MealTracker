@@ -651,20 +651,83 @@ textarea {
   gap: 8px;
 }
 
-#mealDropdown {
-  height: 140px;
-  padding: 4px;
+/* Tappable search results (replaces the old <select> listbox) */
+.meal-results {
+  max-height: 224px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-input);
+  -webkit-overflow-scrolling: touch;
 }
 
-#mealDropdown option {
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
+.meal-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
   cursor: pointer;
+  border-bottom: 1px solid var(--border-light);
+  transition: background var(--transition-fast);
 }
 
-#mealDropdown option:checked {
-  background: linear-gradient(var(--primary), var(--primary));
-  color: white;
+.meal-result:last-child { border-bottom: none; }
+.meal-result:hover { background: var(--bg-hover); }
+
+.meal-result.selected {
+  background: rgba(99, 102, 241, 0.12);
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+.meal-result-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.meal-result-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meal-result-macros {
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+.meal-result-quickadd {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg-card);
+  color: var(--primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.meal-result-quickadd:hover,
+.meal-result-quickadd:active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.meal-result-empty {
+  padding: 24px 12px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
 }
 
 .meal-preview {
@@ -813,23 +876,6 @@ textarea {
   gap: 8px;
 }
 
-.log-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px;
-  background: var(--bg-input);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: all var(--transition);
-}
-
-.log-item:hover {
-  border-color: var(--border);
-  transform: translateX(4px);
-}
-
 .log-info h4 {
   margin: 0 0 4px;
   font-size: 0.95rem;
@@ -924,15 +970,35 @@ textarea {
 }
 
 .recent-item {
-  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 8px;
   background: var(--bg-input);
   border: 1px solid var(--border-light);
   border-radius: var(--radius);
   cursor: pointer;
   text-align: center;
+  font-family: inherit;
+  color: var(--text);
   font-size: 0.85rem;
   font-weight: 500;
   transition: all var(--transition);
+}
+
+.recent-item .recent-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.recent-item .recent-meta {
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
 }
 
 .recent-item:hover {
@@ -2825,6 +2891,146 @@ footer {
   flex-shrink: 0;
   margin-top: 1px;
   color: var(--primary);
+}
+
+/* ============================================
+   MOBILE APP POLISH (bottom nav, PWA, haptic-era UX)
+   ============================================ */
+
+/* --- Bottom Navigation (mobile only) --- */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 500;
+  background: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid var(--border);
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+}
+
+.bottom-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: color var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav-btn.active {
+  color: var(--primary-hover);
+}
+
+.bottom-nav-btn:active svg {
+  transform: scale(0.9);
+}
+
+.bottom-nav-btn svg {
+  transition: transform var(--transition-fast);
+}
+
+@media (max-width: 640px) {
+  .bottom-nav {
+    display: flex;
+  }
+  
+  /* Bottom nav replaces the top tab bar and header shortcuts on phones */
+  .main-nav {
+    display: none;
+  }
+  
+  #btnStats span,
+  #btnSettings span {
+    display: none;
+  }
+  
+  /* Keep content clear of the fixed bottom nav */
+  .container {
+    padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  }
+  
+  /* Toast floats above the bottom nav */
+  .toast {
+    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+    max-width: calc(100vw - 32px);
+  }
+  
+  /* Prevent iOS Safari from zooming the page when focusing inputs */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* --- Toast with action button (Undo etc.) --- */
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.toast.has-action {
+  pointer-events: auto;
+}
+
+.toast-action {
+  border: none;
+  background: transparent;
+  color: var(--primary-hover);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* --- Sync / offline indicator --- */
+.sync-status.offline {
+  color: var(--warning);
+}
+
+.sync-dot.offline-dot {
+  background: var(--warning);
+  animation: none;
+}
+
+/* --- Rest timer final-seconds urgency --- */
+.wo-rest-time.urgent {
+  color: var(--danger);
+  animation: rest-pulse 1s ease infinite;
+}
+
+@keyframes rest-pulse {
+  50% { opacity: 0.45; }
+}
+
+/* --- Log rows read as tappable --- */
+.log-item:active {
+  transform: scale(0.99);
+}
+
+/* --- Respect reduced-motion preferences --- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ============================================
