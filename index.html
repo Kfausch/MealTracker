@@ -2,9 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Fitness Tracker Pro</title>
   <meta name="description" content="Professional nutrition & workout tracker with cloud sync." />
+  <meta name="theme-color" content="#0a0f1a" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Fitness" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
@@ -84,16 +91,15 @@
           </svg>
           <span>Settings</span>
         </button>
-        <button class="btn btn-ghost" id="themeToggle" type="button" title="Toggle theme">
+        <button class="btn btn-ghost" id="themeToggle" type="button" aria-label="Toggle dark/light theme" title="Toggle theme">
           <svg class="theme-icon-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-            <circle cx="12" cy="12" r="5"/>
-            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+            <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
           </svg>
           <svg class="theme-icon-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
             <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
           </svg>
         </button>
-        <button class="btn btn-ghost btn-logout" id="btnLogout" type="button">
+        <button class="btn btn-ghost btn-logout" id="btnLogout" type="button" aria-label="Log out">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
           </svg>
@@ -112,7 +118,6 @@
         Workout
       </button>
     </div>
-
 
     <!-- Main Tracker Layout -->
     <div id="nutritionView">
@@ -182,7 +187,7 @@
                 </div>
 
                 <div class="meal-select-container">
-                  <select id="mealDropdown" aria-label="Meal list" size="6"></select>
+                  <div id="mealResults" class="meal-results" role="listbox" aria-label="Meal search results"></div>
                   <div class="meal-preview" id="mealPreview">
                     <div class="preview-name" id="previewName">Select a meal</div>
                     <div class="preview-macros" id="previewMacros">
@@ -199,7 +204,7 @@
                   <div class="servings-controls">
                     <button type="button" class="btn btn-sm btn-adjust" data-adjust="-0.25">−¼</button>
                     <button type="button" class="btn btn-sm btn-adjust" data-adjust="-0.5">−½</button>
-                    <input id="mealServings" type="number" min="0" step="0.25" value="1" />
+                    <input id="mealServings" type="number" inputmode="decimal" min="0" step="0.25" value="1" />
                     <button type="button" class="btn btn-sm btn-adjust" data-adjust="0.5">+½</button>
                     <button type="button" class="btn btn-sm btn-adjust" data-adjust="0.25">+¼</button>
                   </div>
@@ -229,55 +234,39 @@
 
             <!-- Manual Tab -->
             <div class="tab-content hidden" id="tab-manual">
+              <div class="tabs" style="margin-bottom: 16px; border: none; background: transparent;">
+                <button class="tab-btn active" id="btnSingleEntry" style="border: 1px solid var(--border); border-radius: var(--radius-sm) 0 0 var(--radius-sm);">Single Entry</button>
+                <button class="tab-btn" id="btnBulkEntry" style="border: 1px solid var(--border); border-left: none; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;">PC Bulk Entry</button>
+              </div>
+
               <div class="form" id="manualForm">
-                <!-- Scan Button -->
                 <button type="button" class="btn btn-scan" id="scanLabelBtn">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
-                    <circle cx="12" cy="13" r="4"/>
+                    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>
                   </svg>
                   Scan Nutrition Label
                 </button>
-                
                 <div class="form-row cols-2">
-                  <div class="input-group-inline">
-                    <label for="manualName">Name</label>
-                    <input id="manualName" type="text" placeholder="e.g. Grilled Chicken" />
-                  </div>
-                  <div class="input-group-inline">
-                    <label for="manualServings">Servings</label>
-                    <input id="manualServings" type="number" min="0" step="0.25" value="1" />
-                  </div>
+                  <div class="input-group-inline"><label for="manualName">Name</label><input id="manualName" type="text" placeholder="e.g. Grilled Chicken" /></div>
+                  <div class="input-group-inline"><label for="manualServings">Servings</label><input id="manualServings" type="number" inputmode="decimal" min="0" step="0.25" value="1" /></div>
                 </div>
                 <div class="form-row cols-4 macro-inputs">
-                  <div class="input-group-inline">
-                    <label>Cal</label>
-                    <input id="manualCalories" type="number" placeholder="0" />
-                  </div>
-                  <div class="input-group-inline">
-                    <label>Protein</label>
-                    <input id="manualProtein" type="number" placeholder="0" />
-                  </div>
-                  <div class="input-group-inline">
-                    <label>Carbs</label>
-                    <input id="manualCarbs" type="number" placeholder="0" />
-                  </div>
-                  <div class="input-group-inline">
-                    <label>Fat</label>
-                    <input id="manualFat" type="number" placeholder="0" />
-                  </div>
+                  <div class="input-group-inline"><label>Cal</label><input id="manualCalories" type="number" inputmode="decimal" placeholder="0" /></div>
+                  <div class="input-group-inline"><label>Protein</label><input id="manualProtein" type="number" inputmode="decimal" placeholder="0" /></div>
+                  <div class="input-group-inline"><label>Carbs</label><input id="manualCarbs" type="number" inputmode="decimal" placeholder="0" /></div>
+                  <div class="input-group-inline"><label>Fat</label><input id="manualFat" type="number" inputmode="decimal" placeholder="0" /></div>
                 </div>
                 <div class="button-row">
-                  <button class="btn btn-secondary" id="addSaveManualBtn" type="button">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
-                      <polyline points="17,21 17,13 7,13 7,21"/>
-                      <polyline points="7,3 7,8 15,8"/>
-                    </svg>
-                    Add & Save to Library
-                  </button>
+                  <button class="btn btn-secondary" id="addSaveManualBtn" type="button">Add & Save to Library</button>
                   <button class="btn" id="addManualBtn" type="button">Add Log Only</button>
                 </div>
+              </div>
+
+              <!-- PC Bulk Entry Form -->
+              <div class="form hidden" id="bulkEntryForm">
+                <p class="muted" style="margin-bottom: 8px;">Paste data from a spreadsheet. Format: <strong>Name, Servings, Calories, Protein, Carbs, Fat</strong> (Tab or comma separated)</p>
+                <textarea id="bulkEntryText" placeholder="Oatmeal, 1, 150, 5, 27, 3&#10;Chicken, 2, 330, 62, 0, 7.2" style="min-height: 150px; font-family: var(--font-mono); font-size: 0.85rem;"></textarea>
+                <button class="btn btn-primary" id="processBulkBtn" type="button">Process Bulk Data</button>
               </div>
             </div>
           </div>
@@ -310,7 +299,7 @@
                   </svg>
                   Weight
                 </label>
-                <input id="dayWeight" type="number" step="0.1" placeholder="lbs" />
+                <input id="dayWeight" type="number" inputmode="decimal" step="0.1" placeholder="lbs" />
               </div>
               <div class="metric-input">
                 <label>
@@ -319,7 +308,7 @@
                   </svg>
                   Steps
                 </label>
-                <input id="daySteps" type="number" placeholder="0" />
+                <input id="daySteps" type="number" inputmode="decimal" placeholder="0" />
               </div>
               <button id="saveMetricsBtn" class="btn btn-xs">Save</button>
             </div>
@@ -451,7 +440,6 @@
       </main>
     </div>
 
-
     <!-- ============ WORKOUT VIEW ============ -->
     <div id="workoutView" class="hidden">
       <div class="date-nav-container">
@@ -548,7 +536,6 @@
       </div>
       
       <div class="grid grid-2">
-        <!-- Weekly Summary -->
         <div class="card">
           <div class="card-header">
             <h3>
@@ -590,7 +577,6 @@
           </div>
         </div>
 
-        <!-- Monthly Overview -->
         <div class="card">
           <div class="card-header">
             <h3>
@@ -618,7 +604,6 @@
           </div>
         </div>
 
-        <!-- Weight Trend -->
         <div class="card">
           <div class="card-header">
             <h3>
@@ -631,7 +616,6 @@
           <div class="chart-area" id="weightChart"></div>
         </div>
 
-        <!-- Protein Adherence -->
         <div class="card">
           <div class="card-header">
             <h3>
@@ -666,10 +650,7 @@
           Settings
         </h2>
         <button class="btn-close" id="closeSettingsBtn" aria-label="Close settings">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
       
@@ -679,16 +660,15 @@
         <button class="settings-tab-btn" data-stab="schedule">Workout Schedule</button>
       </div>
 
-      <!-- General Tab -->
       <div class="settings-tab-content" id="stab-general">
         <div class="settings-section">
           <h3>Daily Targets</h3>
           <div class="form">
             <div class="responsive-row targets-row">
-              <div class="target-input"><label>Calories</label><input id="targetCalories" type="number" /><span class="unit">kcal</span></div>
-              <div class="target-input"><label>Protein</label><input id="targetProtein" type="number" /><span class="unit">g</span></div>
-              <div class="target-input"><label>Carbs</label><input id="targetCarbs" type="number" /><span class="unit">g</span></div>
-              <div class="target-input"><label>Fat</label><input id="targetFat" type="number" /><span class="unit">g</span></div>
+              <div class="target-input"><label>Calories</label><input id="targetCalories" type="number" inputmode="decimal" /><span class="unit">kcal</span></div>
+              <div class="target-input"><label>Protein</label><input id="targetProtein" type="number" inputmode="decimal" /><span class="unit">g</span></div>
+              <div class="target-input"><label>Carbs</label><input id="targetCarbs" type="number" inputmode="decimal" /><span class="unit">g</span></div>
+              <div class="target-input"><label>Fat</label><input id="targetFat" type="number" inputmode="decimal" /><span class="unit">g</span></div>
             </div>
             <button class="btn btn-primary" id="saveTargetsBtn">Update Targets</button>
           </div>
@@ -719,7 +699,6 @@
         </div>
       </div>
 
-      <!-- Food Library Tab -->
       <div class="settings-tab-content hidden" id="stab-library">
         <div class="settings-section">
           <h3>Food Library</h3>
@@ -737,7 +716,6 @@
         </div>
       </div>
 
-      <!-- Workout Schedule Tab -->
       <div class="settings-tab-content hidden" id="stab-schedule">
         <div class="settings-section">
           <h3>Weekly Workout Schedule</h3>
@@ -771,33 +749,15 @@
     <div class="modal-content">
       <h3>Edit Log Entry</h3>
       <div class="form">
-        <div class="input-group-inline">
-          <label>Name</label>
-          <input id="editName" type="text" />
-        </div>
+        <div class="input-group-inline"><label>Name</label><input id="editName" type="text" /></div>
         <div class="form-row cols-2">
-          <div class="input-group-inline">
-            <label>Servings</label>
-            <input id="editServings" type="number" step="0.25" />
-          </div>
-          <div class="input-group-inline">
-            <label>Calories</label>
-            <input id="editCalories" type="number" />
-          </div>
+          <div class="input-group-inline"><label>Servings</label><input id="editServings" type="number" inputmode="decimal" step="0.25" /></div>
+          <div class="input-group-inline"><label>Calories</label><input id="editCalories" type="number" inputmode="decimal" /></div>
         </div>
         <div class="form-row cols-3">
-          <div class="input-group-inline">
-            <label>Protein</label>
-            <input id="editP" type="number" />
-          </div>
-          <div class="input-group-inline">
-            <label>Carbs</label>
-            <input id="editC" type="number" />
-          </div>
-          <div class="input-group-inline">
-            <label>Fat</label>
-            <input id="editF" type="number" />
-          </div>
+          <div class="input-group-inline"><label>Protein</label><input id="editP" type="number" inputmode="decimal" /></div>
+          <div class="input-group-inline"><label>Carbs</label><input id="editC" type="number" inputmode="decimal" /></div>
+          <div class="input-group-inline"><label>Fat</label><input id="editF" type="number" inputmode="decimal" /></div>
         </div>
       </div>
       <div class="modal-actions">
@@ -812,36 +772,18 @@
     <div class="modal-content">
       <h3 id="libModalTitle">Edit Saved Meal</h3>
       <div class="form">
-        <!-- Scan Button for Library -->
         <button type="button" class="btn btn-scan btn-scan-sm" id="scanLibLabelBtn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
-            <circle cx="12" cy="13" r="4"/>
+            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>
           </svg>
           Scan Label
         </button>
-        
-        <div class="input-group-inline">
-          <label>Name</label>
-          <input id="libName" type="text" placeholder="e.g. Oatmeal" />
-        </div>
+        <div class="input-group-inline"><label>Name</label><input id="libName" type="text" placeholder="e.g. Oatmeal" /></div>
         <div class="form-row cols-2">
-          <div class="input-group-inline">
-            <label>Calories</label>
-            <input id="libCal" type="number" placeholder="0" />
-          </div>
-          <div class="input-group-inline">
-            <label>Protein</label>
-            <input id="libPro" type="number" placeholder="0" />
-          </div>
-          <div class="input-group-inline">
-            <label>Carbs</label>
-            <input id="libCarb" type="number" placeholder="0" />
-          </div>
-          <div class="input-group-inline">
-            <label>Fat</label>
-            <input id="libFat" type="number" placeholder="0" />
-          </div>
+          <div class="input-group-inline"><label>Calories</label><input id="libCal" type="number" inputmode="decimal" placeholder="0" /></div>
+          <div class="input-group-inline"><label>Protein</label><input id="libPro" type="number" inputmode="decimal" placeholder="0" /></div>
+          <div class="input-group-inline"><label>Carbs</label><input id="libCarb" type="number" inputmode="decimal" placeholder="0" /></div>
+          <div class="input-group-inline"><label>Fat</label><input id="libFat" type="number" inputmode="decimal" placeholder="0" /></div>
         </div>
       </div>
       <div class="modal-actions">
@@ -853,28 +795,60 @@
     </div>
   </dialog>
 
-
   <!-- Add Exercise Modal -->
   <dialog id="addExerciseModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
         <h3>Add Exercise</h3>
-        <button class="btn-close" id="closeAddExerciseBtn" aria-label="Close">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
+        <button class="btn-close" id="closeAddExerciseBtn" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
       <div class="form">
-        <div class="input-group-inline"><label>Exercise Name</label><input id="addExName" type="text" placeholder="e.g. Bench Press" /></div>
-        <div class="form-row cols-3">
-          <div class="input-group-inline"><label>Sets</label><input id="addExSets" type="number" min="1" value="3" /></div>
+        <div class="form-row cols-2">
+          <div class="input-group-inline"><label>Type</label>
+            <select id="addExType">
+              <option value="strength">Strength Training</option>
+              <option value="cardio">Cardio / Treadmill</option>
+            </select>
+          </div>
+          <div class="input-group-inline"><label>Equipment</label>
+            <input id="addExEquipment" list="equipList" placeholder="Optional" />
+            <datalist id="equipList">
+              <option value="Barbell"></option>
+              <option value="Rackable Curl Bar"></option>
+              <option value="Leg Developer"></option>
+              <option value="Dumbbells"></option>
+              <option value="Machine"></option>
+              <option value="Cable"></option>
+              <option value="Bodyweight"></option>
+            </datalist>
+          </div>
+        </div>
+        <div class="input-group-inline"><label>Exercise Name</label><input id="addExName" type="text" placeholder="e.g. Incline Treadmill Walk, Bench Press" /></div>
+        
+        <div class="form-row cols-3" id="strengthInputs">
+          <div class="input-group-inline"><label>Sets</label><input id="addExSets" type="number" inputmode="decimal" min="1" value="3" /></div>
           <div class="input-group-inline"><label>Target Reps</label><input id="addExReps" type="text" placeholder="e.g. 8-12" /></div>
           <div class="input-group-inline"><label>Body Part</label><input id="addExBodyPart" type="text" placeholder="e.g. Chest" /></div>
         </div>
-        <div class="input-group-inline"><label>Notes</label><textarea id="addExNotes" placeholder="e.g. Superset with curls, focus on form..." rows="2"></textarea></div>
+        
+        <div class="input-group-inline"><label>Notes</label><textarea id="addExNotes" placeholder="e.g. Focus on form, speed intervals..." rows="2"></textarea></div>
         <button class="btn btn-primary" id="addExSubmitBtn">Add to Workout</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Visual Plate Calculator Modal -->
+  <dialog id="plateCalcModal" class="modal">
+    <div class="modal-content" style="text-align: center;">
+      <h3 style="margin-bottom: 20px;">Plate Calculator</h3>
+      <div class="form-row cols-2" style="margin-bottom: 24px; text-align: left;">
+        <div class="input-group-inline"><label>Target Weight (lbs)</label><input id="calcTargetWeight" type="number" inputmode="decimal" /></div>
+        <div class="input-group-inline"><label>Bar Weight (lbs)</label><input id="calcBarWeight" type="number" inputmode="decimal" value="45" /></div>
+      </div>
+      <div id="plateVisualizer" class="plate-visualizer"></div>
+      <p id="plateCalcText" style="font-weight: 600; margin-top: 16px; font-family: var(--font-mono);"></p>
+      <div class="modal-actions">
+        <button class="btn full-width" id="closePlateCalcBtn">Close</button>
       </div>
     </div>
   </dialog>
@@ -892,6 +866,26 @@
     </div>
   </dialog>
 
+  <!-- Mobile Bottom Navigation -->
+  <nav class="bottom-nav" id="bottomNav" aria-label="Primary">
+    <button class="bottom-nav-btn active" data-view="nutrition" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>
+      <span>Nutrition</span>
+    </button>
+    <button class="bottom-nav-btn" data-view="workout" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M6.5 6.5h11M6.5 17.5h11"/><rect x="2" y="4" width="4.5" height="7" rx="1"/><rect x="17.5" y="4" width="4.5" height="7" rx="1"/><rect x="2" y="13" width="4.5" height="7" rx="1"/><rect x="17.5" y="13" width="4.5" height="7" rx="1"/><line x1="12" y1="1" x2="12" y2="23"/></svg>
+      <span>Workout</span>
+    </button>
+    <button class="bottom-nav-btn" data-view="stats" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+      <span>Stats</span>
+    </button>
+    <button class="bottom-nav-btn" id="bottomNavSettings" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      <span>Settings</span>
+    </button>
+  </nav>
+
   <!-- Toast Notification -->
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
@@ -907,15 +901,11 @@
           Scan Nutrition Label
         </h3>
         <button class="btn-close" id="closeScannerBtn" aria-label="Close scanner">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
       
       <div class="scanner-body">
-        <!-- Camera View -->
         <div class="camera-container" id="cameraContainer">
           <video id="cameraVideo" autoplay playsinline></video>
           <div class="camera-overlay">
@@ -924,7 +914,6 @@
           </div>
         </div>
         
-        <!-- Preview after capture -->
         <div class="preview-container hidden" id="previewContainer">
           <img id="previewImage" alt="Captured image" />
           <div class="preview-overlay" id="previewOverlay">
@@ -935,36 +924,20 @@
           </div>
         </div>
         
-        <!-- Results -->
         <div class="scan-results hidden" id="scanResults">
           <h4>Detected Values</h4>
           <div class="result-grid">
-            <div class="result-item">
-              <label>Calories</label>
-              <input type="number" id="scanCalories" />
-            </div>
-            <div class="result-item">
-              <label>Protein</label>
-              <input type="number" id="scanProtein" />
-            </div>
-            <div class="result-item">
-              <label>Carbs</label>
-              <input type="number" id="scanCarbs" />
-            </div>
-            <div class="result-item">
-              <label>Fat</label>
-              <input type="number" id="scanFat" />
-            </div>
+            <div class="result-item"><label>Calories</label><input type="number" inputmode="decimal" id="scanCalories" /></div>
+            <div class="result-item"><label>Protein</label><input type="number" inputmode="decimal" id="scanProtein" /></div>
+            <div class="result-item"><label>Carbs</label><input type="number" inputmode="decimal" id="scanCarbs" /></div>
+            <div class="result-item"><label>Fat</label><input type="number" inputmode="decimal" id="scanFat" /></div>
           </div>
           <p class="scan-hint">Review and adjust values if needed</p>
         </div>
         
-        <!-- Error state -->
         <div class="scan-error hidden" id="scanError">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="48" height="48">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
           <p id="scanErrorMsg">Could not read nutrition label</p>
           <button class="btn" id="retryScnBtn">Try Again</button>
@@ -974,21 +947,15 @@
       <div class="scanner-actions">
         <button class="btn" id="cancelScanBtn">Cancel</button>
         <button class="btn btn-primary" id="captureBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-            <circle cx="12" cy="12" r="10"/>
-            <circle cx="12" cy="12" r="6" fill="currentColor"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6" fill="currentColor"/></svg>
           Capture
         </button>
         <button class="btn btn-primary hidden" id="useScanBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polyline points="20 6 9 17 4 12"/></svg>
           Use Values
         </button>
       </div>
       
-      <!-- Hidden file input for fallback -->
       <input type="file" id="fileInput" accept="image/*" capture="environment" class="hidden" />
     </div>
   </dialog>
