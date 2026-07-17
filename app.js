@@ -43,6 +43,7 @@ let state = {
   user: null,
   currentDate: new Date(),
   log: [],
+  logByDate: new Map(),
   library: [],
   selectedMealId: null,
   days: {},
@@ -83,6 +84,17 @@ const esc = (s) => String(s ?? "")
 
 const vibrate = (pattern = 10) => {
   if (navigator.vibrate) navigator.vibrate(pattern);
+};
+
+// Fast per-day lookup — avoids re-filtering the whole log history on every render
+const logsFor = (dateStr) => state.logByDate.get(dateStr) || [];
+const rebuildLogIndex = () => {
+  state.logByDate = new Map();
+  for (const entry of state.log) {
+    const arr = state.logByDate.get(entry.date);
+    if (arr) arr.push(entry);
+    else state.logByDate.set(entry.date, [entry]);
+  }
 };
 
 const getLocalDate = (d) => {
@@ -246,6 +258,7 @@ async function initUserData(uid) {
   state.unsubscribeLog = onSnapshot(qLog, (snapshot) => {
     state.log = [];
     snapshot.forEach((doc) => state.log.push({ id: doc.id, ...doc.data() }));
+    rebuildLogIndex();
     $("logLoader").style.display = "none";
     render();
     calculateStreak();
@@ -405,7 +418,7 @@ async function copyPreviousDay() {
   const prevDate = new Date(state.currentDate);
   prevDate.setDate(prevDate.getDate() - 1);
   const prevDateStr = getLocalDate(prevDate);
-  const prevDayLog = state.log.filter(i => i.date === prevDateStr);
+  const prevDayLog = logsFor(prevDateStr);
   
   if (prevDayLog.length === 0) {
     toast("No meals logged yesterday");
@@ -481,7 +494,7 @@ function calculateStreak() {
   
   while (true) {
     const dateStr = getLocalDate(checkDate);
-    const dayLog = state.log.filter(i => i.date === dateStr);
+    const dayLog = logsFor(dateStr);
     
     if (dayLog.length > 0) {
       streak++;
@@ -535,7 +548,7 @@ function exportToCSV() {
 // === UI RENDERING ===
 function getDayLog() {
   const dateStr = getLocalDate(state.currentDate);
-  return state.log.filter(i => i.date === dateStr);
+  return logsFor(dateStr);
 }
 
 function updateDateDisplay() {
@@ -719,9 +732,10 @@ function renderLog() {
     const el = wrapper.querySelector('.log-item');
     
     // Swipe to delete logic
-    let startX = 0, currentX = 0;
+    let startX = 0, currentX = 0, didSwipe = false;
     el.addEventListener('touchstart', (e) => {
       startX = e.touches[0].clientX;
+      didSwipe = false;
       el.classList.add('swiping');
     }, {passive: true});
     
@@ -735,6 +749,7 @@ function renderLog() {
     
     el.addEventListener('touchend', (e) => {
       el.classList.remove('swiping');
+      if (Math.abs(currentX) > 10) didSwipe = true; // any real drag suppresses the trailing click
       if (currentX < -100) {
         el.style.transform = `translateX(-100%)`;
         setTimeout(() => deleteEntry(item.id), 250);
@@ -749,7 +764,10 @@ function renderLog() {
       deleteEntry(item.id);
     };
     
-    el.onclick = () => openEditEntryModal(item);
+    el.onclick = () => {
+      if (didSwipe) { didSwipe = false; return; }
+      openEditEntryModal(item);
+    };
     list.appendChild(wrapper);
   });
   
@@ -831,7 +849,7 @@ function renderWeeklyMini() {
     d.setDate(today.getDate() - i);
     const dateStr = getLocalDate(d);
     
-    const dayLog = state.log.filter(l => l.date === dateStr);
+    const dayLog = logsFor(dateStr);
     const dayTotals = dayLog.reduce((acc, x) => ({
       cal: acc.cal + x.calories,
       pro: acc.pro + x.protein
@@ -914,7 +932,7 @@ function renderStats() {
     d.setDate(today.getDate() - i);
     const dateStr = getLocalDate(d);
     
-    const logs = state.log.filter(l => l.date === dateStr);
+    const logs = logsFor(dateStr);
     const dayTotals = logs.reduce((acc, x) => ({
       cal: acc.cal + x.calories,
       pro: acc.pro + x.protein,
@@ -968,7 +986,7 @@ function renderStats() {
       if (d === 6) startDate = dateObj;
       
       const dateStr = getLocalDate(dateObj);
-      const logs = state.log.filter(l => l.date === dateStr);
+      const logs = logsFor(dateStr);
       weekCal += logs.reduce((sum, x) => sum + x.calories, 0);
       weekPro += logs.reduce((sum, x) => sum + x.protein, 0);
       
@@ -1043,7 +1061,7 @@ function renderAdherenceGrid() {
     d.setDate(today.getDate() - i);
     const dateStr = getLocalDate(d);
     
-    const logs = state.log.filter(l => l.date === dateStr);
+    const logs = logsFor(dateStr);
     const totalPro = logs.reduce((sum, x) => sum + x.protein, 0);
     const pct = Math.round((totalPro / state.targets.protein) * 100);
     
@@ -1446,7 +1464,7 @@ async function init() {
   window.addEventListener("offline", updateSyncStatus);
   updateSyncStatus();
   
-  if ("serviceWorker" in navigator && location.protocol === "https:") {
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1")) {
     navigator.serviceWorker.register("./sw.js").catch(e => console.warn("SW registration failed:", e));
   }
 
@@ -1485,6 +1503,7 @@ async function init() {
     renderWorkoutView();
   };
 
+  initWorkoutListListeners();
   $("woStartBtn").onclick = startWorkout;
   $("woFinishBtn").onclick = finishWorkout;
   $("woSkipRest").onclick = skipRestTimer;
@@ -1815,6 +1834,13 @@ function renderExerciseCards(data) {
     container.appendChild(card);
   });
   
+  // (event listeners for this container are attached ONCE in initWorkoutListListeners —
+  //  attaching them here caused duplicate listeners on every render, multiplying Firestore writes)
+}
+
+function initWorkoutListListeners() {
+  const container = $("woExerciseList");
+
   container.onclick = (e) => {
     const plateBtn = e.target.closest('.btn-plate-calc');
     if (plateBtn) {
